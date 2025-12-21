@@ -1,0 +1,87 @@
+const axios = require("axios");
+
+const BACKEND_URL = process.env.BACKEND_URL;
+if (!BACKEND_URL) { // no backend URL, no tests
+    throw new Error("BACKEND_URL environment variable is not defined");
+}
+
+describe("signin success", () => {
+    test("user should be able to signin with correct credentials", async () => {
+        const username = "test_user_signin" + Date.now() + "_" + process.hrtime.bigint();
+        const password = username + " password@123";
+        const email = username + "@example.com";
+
+        // First signup the user
+        const signup_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+            email,
+            username,
+            password,
+            type: 0 // normal user type
+        });
+
+        expect(signup_response.status).toBe(201);
+        expect(signup_response.data).toBeDefined();
+        expect(signup_response.data.id).toBeDefined();
+
+        // Now signin with the same credentials
+        const signin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, { identifier: username, password });
+
+        expect(signin_response.status).toBe(200);
+
+        // Get all cookies from the response
+        const setCookie = signin_response.headers["set-cookie"];
+        expect(setCookie).toBeDefined();
+
+        // Get the cookie we need
+        const refreshTokenCookie = setCookie.find(c => c.startsWith("refresh_token="));
+        expect(refreshTokenCookie).toBeDefined();
+
+        // assert on the COOKIE STRING
+        expect(refreshTokenCookie).toContain("HttpOnly");
+        expect(refreshTokenCookie).toContain("Secure");
+        expect(refreshTokenCookie).toContain("SameSite=Lax");
+        expect(refreshTokenCookie).toContain("Path=/api/v1/auth/refresh");
+
+        // token exists
+        expect(refreshTokenCookie).toMatch(/^refresh_token=[^;]+;/);
+
+    });
+
+    test("admin should be able to signin with correct credentials", async () => {
+        const username = "test_admin_signin" + Date.now() + "_" + process.hrtime.bigint();
+        const password = username + " password@123";
+        const email = username + "@example.com";
+        // First signup the admin
+        const signup_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+            email,
+            username,
+            password,
+            type: 1 // admin user type
+        });
+
+        expect(signup_response.status).toBe(201);
+        expect(signup_response.data).toBeDefined();
+        expect(signup_response.data.id).toBeDefined();
+
+        // Now signin with the same credentials
+        const signin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, { identifier: username, password });
+        expect(signin_response.status).toBe(200);
+
+        // Get all cookies from the response
+        const setCookie = signin_response.headers["set-cookie"];
+        expect(setCookie).toBeDefined();
+
+        // Get the cookie we need
+        const refreshTokenCookie = setCookie.find(c => c.startsWith("refresh_token="));
+        expect(refreshTokenCookie).toBeDefined();
+
+        // assert on the COOKIE STRING
+        expect(refreshTokenCookie).toContain("HttpOnly");
+        expect(refreshTokenCookie).toContain("Secure");
+        expect(refreshTokenCookie).toContain("SameSite=Lax");
+        expect(refreshTokenCookie).toContain("Path=/api/v1/auth/refresh");
+
+        // token exists
+        expect(refreshTokenCookie).toMatch(/^refresh_token=[^;]+;/);
+    });
+})
