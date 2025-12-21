@@ -119,13 +119,32 @@ describe("signup failure", () => {
         expect(response.data.error).toBeDefined();
     });
 
-    test("signup with missing username fails", async () => {});
+    // All combinations of missing testcases
+    test("signup with multiple missing fields fails", async () => {
+        const username = "test_user" + Date.now() + "_" + process.hrtime.bigint();
+        const password = username + " password@123";
+        const email = username + "@example.com";
+        
+        const fields = { email, username, password, type: 0 };
+        const fieldNames = Object.keys(fields);
+        const testCases = [];
 
-    test("signup with missing password fails", async () => {});
+        // Generate all possible combinations of missing fields (at least one missing)
+        for (let i = 1; i <= Math.pow(2, fieldNames.length) - 2; i++) { // from 1 to 2^n - 2 inclusive... -2 because, 2^n -1 will be {1}*n times. we want to exclude some things, so i did this
+            const testCase = {};
+            for (let j = 0; j < fieldNames.length; j++) {
+                if (i & (1 << j)) {
+                    testCase[fieldNames[j]] = fields[fieldNames[j]];
+                }
+            }
+            testCases.push(testCase);
+        }
 
-    test("signup with missing email fails", async () => {});
-
-    test("signup with invalid user type fails", async () => {});
-
-    test("signup with multiple missing fields fails", async () => {}); // All combinations of missing fields
+        for (const testCase of testCases) {
+            const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, testCase);
+            expect(response.status).toBe(400);
+            expect(response.data).toBeDefined();
+            expect(response.data.error).toBeDefined();
+        }
+    });
 });
