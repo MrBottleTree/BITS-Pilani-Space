@@ -1,7 +1,13 @@
 import { Router } from "express";
+import authRouter from "./auth/auth.routes";
 
-export const router = Router();
+const router = Router();
 
-router.get("/auth/signup", (req, res) => {
-    res.json({ message: "Signup route" });
+// Health/version ping
+router.get("/health", (_req, res) => {
+  res.status(200).json({ ok: true, version: "v1" });
 });
+
+router.use("/auth", authRouter);
+
+export { router };
