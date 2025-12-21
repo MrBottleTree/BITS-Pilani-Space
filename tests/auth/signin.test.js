@@ -104,21 +104,34 @@ describe("signin failure", () => {
         expect(signup_response.data).toBeDefined();
         expect(signup_response.data.id).toBeDefined();
     });
+
     test("signin with incorrect password/identifier pair fails", async () => {
         let signin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, { identifier: username, password: "wrong_password" });
         expect(signin_response.status).toBe(401);
+        expect(signin_response.data).toBeDefined();
+        expect(signin_response.data.error).toBeDefined();
 
         const wrong_username = "wrong_" + username;
         signin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, { identifier: wrong_username, password });
         expect(signin_response.status).toBe(401);
+        expect(signin_response.data).toBeDefined();
+        expect(signin_response.data.error).toBeDefined();
     });
 
     test("signin with missing fields fails", async () => {
         let signin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, { password });
         expect(signin_response.status).toBe(400);
+        expect(signin_response.data).toBeDefined();
+        expect(signin_response.data.error).toBeDefined();
+
         signin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, { identifier: username });
         expect(signin_response.status).toBe(400);
+        expect(signin_response.data).toBeDefined();
+        expect(signin_response.data.error).toBeDefined();
+
         signin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, { });
         expect(signin_response.status).toBe(400);
+        expect(signin_response.data).toBeDefined();
+        expect(signin_response.data.error).toBeDefined();
     });
 });
