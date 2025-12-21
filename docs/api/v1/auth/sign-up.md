@@ -86,4 +86,30 @@ Unsuccessful signup (HTTP 403 - Forbidden)
 }
 ```
 
+Unsuccessful signup (HTTP 400 - Bad Request)
+
+This can be caused because of missing fields, like missing email or missing username.
+
+This can ALSO be caused by unacceptable usernames, for example if the username contains something that is offensive, etc.
+
+response looks like:
+
+```json
+{
+  "error": "Unacceptable username"
+}
+```
+
+or
+
+```json
+{
+  "error": "Missing fields",
+  "details"{
+    (talk about what is missing etc)
+  }
+}
+```
+
+
 ## **All other methods will return (HTTP 405 - Method Not Allowed)**
