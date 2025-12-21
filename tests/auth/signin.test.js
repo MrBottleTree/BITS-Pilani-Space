@@ -84,4 +84,41 @@ describe("signin success", () => {
         // token exists
         expect(refreshTokenCookie).toMatch(/^refresh_token=[^;]+;/);
     });
-})
+});
+
+describe("signin failure", () => {
+    const username = "test_user_signin_fail" + Date.now() + "_" + process.hrtime.bigint();
+    const password = username + " password@123";
+    const email = username + "@example.com";
+
+    beforeAll(async () => {
+        // First signup the user
+        const signup_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+            email,
+            username,
+            password,
+            type: 0 // normal user type
+        });
+
+        expect(signup_response.status).toBe(201);
+        expect(signup_response.data).toBeDefined();
+        expect(signup_response.data.id).toBeDefined();
+    });
+    test("signin with incorrect password/identifier pair fails", async () => {
+        let signin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, { identifier: username, password: "wrong_password" });
+        expect(signin_response.status).toBe(401);
+
+        const wrong_username = "wrong_" + username;
+        signin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, { identifier: wrong_username, password });
+        expect(signin_response.status).toBe(401);
+    });
+
+    test("signin with missing fields fails", async () => {
+        let signin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, { password });
+        expect(signin_response.status).toBe(400);
+        signin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, { identifier: username });
+        expect(signin_response.status).toBe(400);
+        signin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, { });
+        expect(signin_response.status).toBe(400);
+    });
+});
