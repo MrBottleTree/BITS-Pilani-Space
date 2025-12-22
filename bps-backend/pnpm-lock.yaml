@@ -26,6 +26,9 @@ importers:
       '@types/express':
         specifier: ^5.0.6
         version: 5.0.6
+      argon2:
+        specifier: ^0.44.0
+        version: 0.44.0
       express:
         specifier: ^5.2.1
         version: 5.2.1
@@ -146,6 +149,9 @@ packages:
   '@electric-sql/pglite@0.3.2':
     resolution: {integrity: sha512-zfWWa+V2ViDCY/cmUfRqeWY1yLto+EpxjXnZzenB1TyxsTiXaTWeZFIZw6mac52BsuQm0RjCnisjBtdBaXOI6w==}
 
+  '@epic-web/invariant@1.0.0':
+    resolution: {integrity: sha512-lrTPqgvfFQtR/eY/qkIzp98OGdNJu0m5ji3q/nJI8v3SXkRKEnWiOxMmbvcSoAIzv/cGiuvRy57k4suKQSAdwA==}
+
   '@eslint-community/eslint-utils@4.9.0':
     resolution: {integrity: sha512-ayVFHdtZ+hsq1t2Dy24wCmGXGe4q9Gu3smhLYALJrr473ZH27MsnSL+LKUlimp4BWJqMDMLmPpx/Q9R3OAlL4g==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
@@ -224,6 +230,10 @@ packages:
   '@nodelib/fs.walk@1.2.8':
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
+
+  '@phc/format@1.0.0':
+    resolution: {integrity: sha512-m7X9U6BG2+J+R1lSOdCiITLLrxm+cWlNI3HUFA92oLO77ObGNzaKdh8pMLqdZcshtkKuV84olNNXDfMc4FezBQ==}
+    engines: {node: '>=10'}
 
   '@prisma/client-runtime-utils@7.2.0':
     resolution: {integrity: sha512-dn7oB53v0tqkB0wBdMuTNFNPdEbfICEUe82Tn9FoKAhJCUkDH+fmyEp0ClciGh+9Hp2Tuu2K52kth2MTLstvmA==}
@@ -406,6 +416,10 @@ packages:
     resolution: {integrity: sha512-zbB9rCJAT1rbjiVDb2hqKFHNYLxgtk8NURxZ3IZwD3F6NtxbXZQCnnSi1Lkx+IDohdPlFp222wVALIheZJQSEg==}
     engines: {node: '>=8'}
 
+  argon2@0.44.0:
+    resolution: {integrity: sha512-zHPGN3S55sihSQo0dBbK0A5qpi2R31z7HZDZnry3ifOyj8bZZnpZND2gpmhnRGO1V/d555RwBqIK5W4Mrmv3ig==}
+    engines: {node: '>=16.17.0'}
+
   argparse@2.0.1:
     resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
 
@@ -540,6 +554,11 @@ packages:
   cookie@0.7.2:
     resolution: {integrity: sha512-yki5XnKuf750l50uGTllt6kKILY4nQ1eNIQatoXEByZ5dWgnKqbnqmTrBE5B4N7lrMJKQ2ytWMiTO2o0v6Ew/w==}
     engines: {node: '>= 0.6'}
+
+  cross-env@10.1.0:
+    resolution: {integrity: sha512-GsYosgnACZTADcmEyJctkJIoqAhHjttw7RsFrVoJNXbsWWqaq6Ym+7kZjq6mS45O0jij6vtiReppKQEtqWy6Dw==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -1170,8 +1189,16 @@ packages:
     resolution: {integrity: sha512-8Ofs/AUQh8MaEcrlq5xOX0CQ9ypTF5dl78mjlMNfOK08fzpgTHQRQPBxcPlEtIw0yRpws+Zo/3r+5WRby7u3Gg==}
     engines: {node: '>= 0.6'}
 
+  node-addon-api@8.5.0:
+    resolution: {integrity: sha512-/bRZty2mXUIFY/xU5HLvveNHlswNJej+RnxBjOMkidWfwZzgTbPG1E3K5TOxRLOR+5hX7bSofy8yf1hZevMS8A==}
+    engines: {node: ^18 || ^20 || >= 21}
+
   node-fetch-native@1.6.7:
     resolution: {integrity: sha512-g9yhqoedzIUm0nTnTqAQvueMPVOuIY16bqgAJJC8XOOubYFNwz6IER9qs0Gq2Xd0+CecCKFjtdDTMA4u4xG06Q==}
+
+  node-gyp-build@4.8.4:
+    resolution: {integrity: sha512-LA4ZjwlnUblHVgq0oBF3Jl/6h/Nvs5fzBLwdEF4nuxnFdsfajde4WfxtJr3CaiH+F6ewcIB/q4jQ4UzPyid+CQ==}
+    hasBin: true
 
   nypm@0.6.2:
     resolution: {integrity: sha512-7eM+hpOtrKrBDCh7Ypu2lJ9Z7PNZBdi/8AT3AX8xoCj43BBVHD0hPSTEvMtkMpfs8FCqBGhxB+uToIQimA111g==}
@@ -1708,6 +1735,8 @@ snapshots:
 
   '@electric-sql/pglite@0.3.2': {}
 
+  '@epic-web/invariant@1.0.0': {}
+
   '@eslint-community/eslint-utils@4.9.0(eslint@9.39.1(jiti@2.6.1))':
     dependencies:
       eslint: 9.39.1(jiti@2.6.1)
@@ -1789,6 +1818,8 @@ snapshots:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.19.1
+
+  '@phc/format@1.0.0': {}
 
   '@prisma/client-runtime-utils@7.2.0': {}
 
@@ -2037,6 +2068,13 @@ snapshots:
     dependencies:
       color-convert: 2.0.1
 
+  argon2@0.44.0:
+    dependencies:
+      '@phc/format': 1.0.0
+      cross-env: 10.1.0
+      node-addon-api: 8.5.0
+      node-gyp-build: 4.8.4
+
   argparse@2.0.1: {}
 
   array-buffer-byte-length@1.0.2:
@@ -2210,6 +2248,11 @@ snapshots:
   cookie-signature@1.2.2: {}
 
   cookie@0.7.2: {}
+
+  cross-env@10.1.0:
+    dependencies:
+      '@epic-web/invariant': 1.0.0
+      cross-spawn: 7.0.6
 
   cross-spawn@7.0.6:
     dependencies:
@@ -2963,7 +3006,11 @@ snapshots:
 
   negotiator@1.0.0: {}
 
+  node-addon-api@8.5.0: {}
+
   node-fetch-native@1.6.7: {}
+
+  node-gyp-build@4.8.4: {}
 
   nypm@0.6.2:
     dependencies:
