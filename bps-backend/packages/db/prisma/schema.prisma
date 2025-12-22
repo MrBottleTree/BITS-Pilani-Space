@@ -13,3 +13,35 @@ datasource db {
   provider = "postgresql"
 }
 
+model User {
+  id            String         @id @default(cuid())
+  username      String         @unique
+  password_hash String
+  email         String         @unique
+  role          Role           @default(USER)
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @updatedAt
+
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id            String   @id @default(cuid())
+  token_hash    String   @unique
+  userId        String
+  created_at    DateTime @default(now())
+  expires_at    DateTime
+  revoked_at    DateTime?
+  last_used_at  DateTime?
+  user_agent    String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expires_at])
+}
+
+enum Role {
+  ADMIN
+  USER
+}

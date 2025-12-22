@@ -1,5 +1,6 @@
 import express from "express";
 import { router as v1_router } from "./routes/v1";
+import client from "@repo/db";
 
 const app = express();
 

@@ -1,9 +1,14 @@
 {
-  "name": "db",
+  "name": "@repo/db",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/index.ts"
+  },
   "scripts": {
+    "build": "prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -11,9 +16,10 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "prisma": "^7.2.0"
+    "@prisma/client": "^7.2.0"
   },
   "devDependencies": {
-    "@types/node": "^25.0.3"
+    "@types/node": "^25.0.3",
+    "prisma": "^7.2.0"
   }
 }
