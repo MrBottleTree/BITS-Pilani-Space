@@ -1,5 +1,7 @@
 const axios = require("axios");
 
+axios.defaults.validateStatus = () => true;
+
 const BACKEND_URL = process.env.BACKEND_URL;
 if (!BACKEND_URL) { // no backend URL, no tests
     throw new Error("BACKEND_URL environment variable is not defined");
@@ -7,8 +9,8 @@ if (!BACKEND_URL) { // no backend URL, no tests
 
 describe("signin success", () => {
     test("user should be able to signin with correct credentials", async () => {
-        const username = "test_user_signin" + Date.now() + "_" + process.hrtime.bigint();
-        const password = username + " password@123";
+        let username = "test_user_signin" + Date.now() + "_" + process.hrtime.bigint();
+        const password = username + " Password@123";
         const email = username + "@example.com";
 
         // First signup the user
@@ -16,7 +18,7 @@ describe("signin success", () => {
             email,
             username,
             password,
-            type: 0 // normal user type
+            type: "user" // normal user type
         });
 
         expect(signup_response.status).toBe(201);
@@ -39,7 +41,7 @@ describe("signin success", () => {
         // assert on the COOKIE STRING
         expect(refreshTokenCookie).toContain("HttpOnly");
         expect(refreshTokenCookie).toContain("Secure");
-        expect(refreshTokenCookie).toContain("SameSite=Lax");
+        expect(refreshTokenCookie).toContain("SameSite=None");
         expect(refreshTokenCookie).toContain("Path=/api/v1/auth/refresh");
 
         // token exists
@@ -49,14 +51,14 @@ describe("signin success", () => {
 
     test("admin should be able to signin with correct credentials", async () => {
         const username = "test_admin_signin" + Date.now() + "_" + process.hrtime.bigint();
-        const password = username + " password@123";
+        const password = username + " Password@123";
         const email = username + "@example.com";
         // First signup the admin
         const signup_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
             email,
             username,
             password,
-            type: 1 // admin user type
+            type: "admin" // admin user type
         });
 
         expect(signup_response.status).toBe(201);
@@ -78,7 +80,7 @@ describe("signin success", () => {
         // assert on the COOKIE STRING
         expect(refreshTokenCookie).toContain("HttpOnly");
         expect(refreshTokenCookie).toContain("Secure");
-        expect(refreshTokenCookie).toContain("SameSite=Lax");
+        expect(refreshTokenCookie).toContain("SameSite=None");
         expect(refreshTokenCookie).toContain("Path=/api/v1/auth/refresh");
 
         // token exists
@@ -88,7 +90,7 @@ describe("signin success", () => {
 
 describe("signin failure", () => {
     const username = "test_user_signin_fail" + Date.now() + "_" + process.hrtime.bigint();
-    const password = username + " password@123";
+    const password = username + " Password@123";
     const email = username + "@example.com";
 
     beforeAll(async () => {
@@ -97,7 +99,7 @@ describe("signin failure", () => {
             email,
             username,
             password,
-            type: 0 // normal user type
+            type: "user" // normal user type
         });
 
         expect(signup_response.status).toBe(201);
