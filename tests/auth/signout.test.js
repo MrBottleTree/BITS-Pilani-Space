@@ -63,7 +63,13 @@ describe("signout success", () => {
         expect(user_signin_resp.data.expires_in).toBeDefined();
 
         user_access_token = user_signin_resp.data.access_token; // get the access token
-        user_refresh_token = user_signin_resp.data.refresh_token; // get the refresh token (this is the new feature added in the signin response)
+
+        const cookie = user_signin_resp.headers['set-cookie'];
+        expect(cookie).toBeDefined();
+
+        const refresh_token_cookie = cookie.find(c => c.startsWith('refresh_token='));
+        expect(refresh_token_cookie).toBeDefined();
+        user_refresh_token = refresh_token_cookie.split(';')[0].split('=')[1]; // get the refresh token from cookie
 
         expect(user_access_token).toBeDefined();
         expect(user_refresh_token).toBeDefined();
@@ -84,7 +90,12 @@ describe("signout success", () => {
         expect(admin_signin_resp.data.expires_in).toBeDefined();
 
         admin_access_token = admin_signin_resp.data.access_token;
-        admin_refresh_token = admin_signin_resp.data.refresh_token;
+        const a_cookie = admin_signin_resp.headers['set-cookie'];
+        expect(a_cookie).toBeDefined();
+
+        const a_refresh_token_cookie = a_cookie.find(c => c.startsWith('refresh_token='));
+        expect(a_refresh_token_cookie).toBeDefined();
+        admin_refresh_token = a_refresh_token_cookie.split(';')[0].split('=')[1];
 
         expect(admin_access_token).toBeDefined();
         expect(admin_refresh_token).toBeDefined();
