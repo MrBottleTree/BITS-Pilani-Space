@@ -10,30 +10,47 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Docker
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Make is not guaranteed to be present
-      - name: Install make
-        run: sudo apt-get update && sudo apt-get install -y make
+      - name: Install make + curl
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y make curl
 
-      # Start backend (detached) + migrate
+      # Starts postgres + http in background AND runs migrations (per your Makefile run target)
       - name: Start backend (make run)
         working-directory: bps-backend
         run: make run
 
-      # Run tests
+      # Wait until backend is reachable from the runner host.
+      # Assumes your backend has GET /health -> 200.
+      - name: Wait for backend
+        run: |
+          set -e
+          for i in $(seq 1 90); do
+            if curl -fsS "http://localhost:3000/api/v1/healthz" > /dev/null; then
+              echo "Backend is up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend never became ready"
+          docker compose -f bps-backend/http-compose.yml logs --tail=300
+          exit 1
+
       - name: Install and run tests
         working-directory: tests
+        env:
+          BACKEND_URL: http://localhost:3000
         run: |
           npm install
           npm run test
 
-      # Always clean up (wipe DB volume for CI)
-      - name: Shutdown containers
+      - name: Shutdown (always)
         if: always()
-        working-directory: bps-backend
-        run: docker compose -f http-compose.yml down -v
+        run: |
+          docker compose -f bps-backend/http-compose.yml down -v
