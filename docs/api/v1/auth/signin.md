@@ -27,13 +27,11 @@ The frontend **collects the user's information**, sends it to the backend, and t
     - This helps us to scale by a lot, because of reduced database access for authentication. If server cache is cold, then all access tokens are invalidated by default but refresh token stays intact to issue new access tokens.
     - This also helps the user to stay logged in. They don't have to keep on signing in all the time.
 
-*Note* - This should be called only if the frontend is logged out.  <!-- Please explain this line MrBottleTree -->
+*Note* - The refresh token must be invalidated after the user has signed out regardless of Timeout or Lifetime.
 
 ---
 
-### **What the backend expects**
-
-<!-- Constraints about username itself should be done in sign up and not sign in so I am removing it from here -->
+## **What the backend expects**
 
 The backend expects:
 - **email** or **username** (string) field name -> **identifier**
@@ -49,11 +47,31 @@ Example request body:
 
 ```
 
-# What the backend returns
+## What the backend returns
 
-## On successful signin (HTTP 200 - Ok):
+### On successful signin (**HTTP 200 - Ok**):
 
-### Headers:
+**Headers**:
+
+*Brief Explanation*:
+
+*Set-Cookie* means the server tells the browser to store this data for future access or refresh.
+
+Content to store as the cookie:
+- *refresh token* value itself which is stored in the backend database
+
+- *HttpOnly* disallows users from accessing this cookie via Client side scripts. Prevents *Cross-Site Scripting* (XSS) attacks i.e. even if the hacker runs malicious code on your page, they cannot see this cookie data.
+
+- *Secure* - Means that cookie is only sent over encrypted connections (HTTPS) to ensure safely against Man-in-the-Middle attacks
+
+- *SameSite* - This is one operating mode out of `Strict`, `Lax` and `None`.
+  - *Strict* - This mode allows `GET` and `POST` with the cookie attached only if the request originates from the same site.
+  - *Lax* - This mode allows `POST` with the cookie attached only if the request originates from the same site however, `GET` method is allowed via a request to this site originating from another site. In other words, Lax allows data to be given by the server but no data can be modified or presented to the server in this scenario.
+  - *None* - This mode allows both `GET` and `POST` methods to be originating from another flag and requries the Secure flag to be set.
+
+  *Note* - Strict and Lax modes help prevent **Cross-Site Request Forgery** (CSRF) attacks.
+
+- *Path* - This is a final check making sure that this cookie is only to be attached to requests to this path or sub-paths. For example, if `PATH = /api/v1/auth/refresh` then `/api/v1/auth/login endpoint` would not have the cookie attached but `/api/v1/auth/refresh` or `/api/v1/auth/refresh/auto` will have the cookie attached.
 
 ```
 Set-Cookie: refresh_token=...;
@@ -67,13 +85,15 @@ Path=/api/v1/auth/refresh
 ```json
 {
     "id": (integer/string based on our backend design),
-    "type": 0 or 1 based on type of user,
+    "type": 0 or 1 based on type of user (or some sub category based on protocol that is subject to change at the moment),
     "access_token": short lived access token (string),
     "expires_in": natural number (seconds)
 }
 ```
 
-## On unsuccessful signin (missing fields) (HTTP 400 - Bad Request)
+<!--- I saw that apparantly in JWT style tokens expiry is embedded into the access token itself so if we are taking that format then this needs to be changed. MrBottleTree -->
+
+## On unsuccessful signin (missing fields) **(HTTP 400 - Bad Request)**
 
 ```json
 {
@@ -84,7 +104,7 @@ Path=/api/v1/auth/refresh
 }
 ```
 
-## On unsuccessful signin (incorrect ```identifier``` - ```password``` pair) (HTTP 401 - Unauthorized)
+## On unsuccessful signin (incorrect ```identifier``` - ```password``` pair) **(HTTP 401 - Unauthorized)**
 
 ```json
 {
@@ -95,4 +115,4 @@ Path=/api/v1/auth/refresh
 }
 ```
 
-## **All other methods will return (HTTP 405 - Method Not Allowed)**
+## **All other methods will return ***(HTTP 405 - Method Not Allowed)***
