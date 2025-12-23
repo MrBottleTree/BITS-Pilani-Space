@@ -58,7 +58,7 @@ jobs:
           docker logs --tail=400 "$cid" || true
           exit 1
 
-          - name: Install and run tests
+      - name: Install and run tests
         working-directory: tests
         env:
           BACKEND_URL: http://localhost:3000
