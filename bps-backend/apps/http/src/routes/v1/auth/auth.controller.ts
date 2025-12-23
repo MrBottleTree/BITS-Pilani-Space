@@ -16,7 +16,7 @@ export const signup_post = async (req: Request, res: Response, next: NextFunctio
         return res.status(400).json({
             error: "Invalid signup data",
             details: parsedBody.error.format(),
-        });
+        }).end();
     }
 
     try {
@@ -32,34 +32,28 @@ export const signup_post = async (req: Request, res: Response, next: NextFunctio
             }
         });
 
-        return res.status(201).json({ id: user.id }); // return back the user ID to the client
+        return res.status(201).json({ id: user.id }).end(); // return back the user ID to the client
     }
 
     catch (error: any) {
 
-        if (error.code === "P2002") { // Check if the error is because of unique constraint violation
-            const field = error.meta?.target?.[0] || "field";
-            return res.status(409).json({
-                error: `${field} already exists`,
-                details: `The ${field} is already registered.`,
-            });
-        }
+        res.status(409).json({"error": "Email or username already exists"}).end(); // Conflict, probably email or username already exists
 
-        next(error); // if not, then let express handle the error
+        next(error); // pass to global error handler for logging
+        return;
     };
+
 };
 
 export const signin_post = async (req: Request, res: Response, next: NextFunction) => {
     const parsedBody = Types.SigninScheme.safeParse(req.body); // Clean the input data
 
     if (!parsedBody.success) { // Tell the user what is wrong with their input
-        return res.status(400).json({
-            error: "Invalid signin data",
-            details: parsedBody.error.format(),
-        });
+        return res.status(400).json({error: "Invalid signin data", details: parsedBody.error.format()}).end();
     }
 
     try {
+        // identifier is both username and email
         const user = await client.user.findFirst({
             where: {
                 OR: [
@@ -70,14 +64,30 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
         });
 
         if (!user) {
-            return res.status(401).json({ error: "Invalid credentials" }); // Unauthorized
+            // Unauthorized
+            return res.status(401).json({ error: "Invalid credentials" }).end();
         }
 
         const passwordValid = await argon2.verify(user.password_hash, parsedBody.data.password);
 
         if (!passwordValid) {
-            return res.status(401).json({ error: "Invalid credentials" }); // Unauthorized again
+            // Unauthorized again
+            return res.status(401).json({ error: "Invalid credentials" }).end();
         }
+
+        // 7 days in milliseconds
+        const REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
+        const refreshExpiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS);
+
+        const refreshRow_promise = client.refreshToken.create({
+            data: {
+                userId: user.id,
+                expires_at: refreshExpiresAt,
+                user_agent: req.get("User-Agent"),
+                token_hash: "tmp", // will update after signing
+            },
+            select: { id: true },
+        });
 
         const expires_in = 15 * 60; // 15 minutes in seconds
 
@@ -87,25 +97,20 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
             { expiresIn: expires_in }
         );
 
-        // 7 days in milliseconds
-        const REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
-        const refreshExpiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS);
-
-        const refreshRow = await client.refreshToken.create({
-        data: {
-            userId: user.id,
-            expires_at: refreshExpiresAt,
-            user_agent: req.get("User-Agent"),
-            token_hash: "tmp", // will update after signing
-        },
-            select: { id: true },
-        });
+        const refreshRow =  await refreshRow_promise;
 
         const refresh_token = jwt.sign(
             { userId: user.id, jti: refreshRow.id },
             JWT_REFRESH_SECRET,
             { expiresIn: "7d" }
         );
+
+        // Set the refresh token as an HttpOnly cookie
+        // close the connection as soon as possible
+        res.status(200)
+        .cookie('refresh_token', refresh_token, {httpOnly: true, secure: true, sameSite: 'none', path: '/api/v1/auth',})
+        .json({ id: user.id, type: user.role, access_token: accessToken, expires_in: expires_in})
+        .end();
 
         // Hash the refresh token before storing it
         // WE DONT TRUST DATABASE IN CASE OF DB LEAKS
@@ -116,16 +121,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
             data: { token_hash: tokenHash },
         });
 
-        // Set the refresh token as an HttpOnly cookie
-        res.cookie('refresh_token', refresh_token, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            path: '/api/v1/auth',
-        });
-
-
-        return res.status(200).json({ id: user.id, type: user.role, access_token: accessToken, expires_in: expires_in});
+        return;
     }
     catch (error) {
         next(error);
@@ -148,17 +144,20 @@ export const signout_post = async (req: Request, res: Response, next: NextFuncti
         });
 
         if (row && row.userId === decodedRefresh.userId && !row.revoked_at) {
+
+            // invalidate the cookie on client side
+            res.clearCookie("refresh_token", { path: "/api/v1/auth" }).status(204).end();
+
             await client.refreshToken.update({
                 where: { id: row.id },
                 data: { revoked_at: new Date() },
             });
+
+            return;
         }
         else{
             return res.status(401).end();
         }
-
-        res.clearCookie("refresh_token", { path: "/api/v1/auth" });
-        return res.status(204).end();
     }
     catch {
         return res.status(401).end();
