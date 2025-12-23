@@ -1,11 +1,12 @@
 **/node_modules
 **/.pnpm-store
+.pnpm-store
 **/dist
 **/build
 **/.turbo
 **/.next
 **/.cache
 **/.git
-**/.DS_Store
 **/*.log
 .env
+.DS_Store

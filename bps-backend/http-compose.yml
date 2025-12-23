@@ -35,6 +35,11 @@ services:
       CI: "true"
       DATABASE_URL: postgres://bps:lol@postgres:5432/bps_db
     command: sh -lc "pnpm install && pnpm -C apps/http run dev"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/v1/healthz >/dev/null 2>&1 || exit 1"]
+      interval: 2s
+      timeout: 2s
+      retries: 60
 
   migrate:
     build:
