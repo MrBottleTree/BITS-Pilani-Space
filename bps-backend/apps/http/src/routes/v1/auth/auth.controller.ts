@@ -39,7 +39,6 @@ export const signup_post = async (req: Request, res: Response, next: NextFunctio
 
         res.status(409).json({"error": "Email or username already exists"}).end(); // Conflict, probably email or username already exists
 
-        next(error); // pass to global error handler for logging
         return;
     };
 

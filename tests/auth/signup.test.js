@@ -15,7 +15,7 @@ describe("signup success", () => {
 
         const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
             email,
-            username: username.substring(0, 20), // username max length is 20
+            username: username, // username max length is 20
             password,
             type: "user" // normal user type
         });
@@ -32,7 +32,7 @@ describe("signup success", () => {
 
         const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
             email,
-            username: username.substring(0, 20), // username max length is 20
+            username: username, // username max length is 20
             password,
             type: "admin" // normal user type
         });
@@ -51,7 +51,7 @@ describe("signup failure", () => {
         // First signup a new user
         const first_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
             email,
-            username: username.substring(0, 20), // username max length is 20
+            username: username, // username max length is 20
             password,
             type: "user" // user type, this can be anything, even admin. Usernames should be unique throughout user and admin.
         });
@@ -64,7 +64,7 @@ describe("signup failure", () => {
         // Check for user type first
         const user_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
             email,
-            username: username.substring(0, 20), // username max length is 20
+            username: username,
             password,
             type: "user" // user type
         });
@@ -77,7 +77,7 @@ describe("signup failure", () => {
 
         const admin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
             email,
-            username: username.substring(0, 20), // username max length is 20
+            username: username, // username max length is 20
             password,
             type: "admin" // admin type
         });
@@ -94,7 +94,7 @@ describe("signup failure", () => {
 
         const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
             email,
-            username: username.substring(0, 20), // username max length is 20
+            username: username, // username max length is 20
             password,
             type: "user"
         });
@@ -110,7 +110,7 @@ describe("signup failure", () => {
 
         const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
             email: username + "@example.com",
-            username: username.substring(0, 20), // username max length is 20
+            username: username, // username max length is 20
             password,
             type: "user"
         });
@@ -126,7 +126,7 @@ describe("signup failure", () => {
         const password = username + " password@123";
         const email = username + "@example.com";
         
-        const fields = { email, username: username.substring(0, 20), password, type: "user" };
+        const fields = { email, username: username, password, type: "user" };
         const fieldNames = Object.keys(fields);
         const testCases = [];
 
