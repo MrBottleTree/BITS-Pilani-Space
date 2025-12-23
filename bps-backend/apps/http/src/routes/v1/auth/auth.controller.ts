@@ -164,3 +164,36 @@ export const signout_post = async (req: Request, res: Response, next: NextFuncti
         return res.status(401).end();
     }
 };
+
+export const refresh_post = async (req: Request, res: Response, next: NextFunction) => {
+    const refresh_token = req.cookies?.refresh_token as string | undefined;
+
+    if (!refresh_token) {
+        return res.status(400).end(); // no refresh token, no signout needed
+    }
+
+    try {
+        const decodedRefresh = jwt.verify(refresh_token, JWT_REFRESH_SECRET) as { userId: string; jti: string };
+
+        // if it is valid, this line is run
+        const row = await client.refreshToken.findUnique({
+            where: { id: decodedRefresh.jti },
+            select: { userId: true, revoked_at: true, user: { select: { id: true, email: true, role: true } } },
+        });
+
+        if (row && row.userId === decodedRefresh.userId && !row.revoked_at) {
+            const expires_in = 15 * 60; // 15 minutes in seconds
+
+            const accessToken = jwt.sign(
+                { userId: row.user.id, email: row.user.email, role: row.user.role },
+                JWT_SECRET,
+                { expiresIn: expires_in }
+            );
+
+            return res.status(200).json({ access_token: accessToken, expires_in: expires_in }).end();
+        }
+    }
+    finally {
+        return res.status(401).end();
+    };
+};
