@@ -133,18 +133,34 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
 };
 
 export const signout_post = async (req: Request, res: Response, next: NextFunction) => {
-    const refresh_token = req.cookies['refresh_token'];
-    const auth = req.headers.authorization;
-    const access_token = auth?.startsWith("Bearer ") ? auth.slice(7) : undefined; // no runtime crash
+    const refresh_token = req.cookies?.refresh_token as string | undefined;
 
-    // Check if keys exist
-    if (!refresh_token || !access_token) {
-        return res.status(400).json({ error: "Malformed request", details: "Missing tokens in request." });
-    };
-
-    // Check if refresh token is valid, if it is, then invalidate it in the database
-    try{
-        const decodedRefresh = jwt.verify(refresh_token, JWT_REFRESH_SECRET) as { userId: number };
+    if (!refresh_token) {
+        return res.status(400).end(); // no refresh token, no signout needed
     }
-    catch{};
+
+    try {
+        const decodedRefresh = jwt.verify(refresh_token, JWT_REFRESH_SECRET) as { userId: string; jti: string };
+
+        const row = await client.refreshToken.findUnique({
+            where: { id: decodedRefresh.jti },
+            select: { id: true, userId: true, revoked_at: true },
+        });
+
+        if (row && row.userId === decodedRefresh.userId && !row.revoked_at) {
+            await client.refreshToken.update({
+                where: { id: row.id },
+                data: { revoked_at: new Date() },
+            });
+        }
+        else{
+            return res.status(401).end();
+        }
+
+        res.clearCookie("refresh_token", { path: "/api/v1/auth" });
+        return res.status(204).end();
+    }
+    catch {
+        return res.status(401).end();
+    }
 };
