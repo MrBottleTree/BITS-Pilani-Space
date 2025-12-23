@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import * as Types from "../../../types";
 import client from "@repo/db/client";
 import argon2 from "argon2";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -79,7 +79,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
             return res.status(401).json({ error: "Invalid credentials" }); // Unauthorized again
         }
 
-        const expires_in = 15 * 60 * 1000; // 15 minutes in milliseconds
+        const expires_in = 15 * 60; // 15 minutes in seconds
 
         const accessToken = jwt.sign(
             { userId: user.id, email: user.email, role: user.role },
@@ -91,8 +91,18 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
         const REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
         const refreshExpiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS);
 
+        const refreshRow = await client.refreshToken.create({
+        data: {
+            userId: user.id,
+            expires_at: refreshExpiresAt,
+            user_agent: req.get("User-Agent"),
+            token_hash: "tmp", // will update after signing
+        },
+            select: { id: true },
+        });
+
         const refresh_token = jwt.sign(
-            { userId: user.id },
+            { userId: user.id, jti: refreshRow.id },
             JWT_REFRESH_SECRET,
             { expiresIn: "7d" }
         );
@@ -101,13 +111,9 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
         // WE DONT TRUST DATABASE IN CASE OF DB LEAKS
         const tokenHash = await argon2.hash(refresh_token);
 
-        await client.refreshToken.create({
-            data: {
-                token_hash: tokenHash,
-                userId: user.id,
-                expires_at: refreshExpiresAt,
-                user_agent: req.get('User-Agent')
-            }
+        await client.refreshToken.update({
+            where: { id: refreshRow.id },
+            data: { token_hash: tokenHash },
         });
 
         // Set the refresh token as an HttpOnly cookie
@@ -115,7 +121,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
             httpOnly: true,
             secure: true,
             sameSite: 'none',
-            path: '/api/v1/auth/refresh',
+            path: '/api/v1/auth',
         });
 
 
@@ -123,5 +129,38 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
     }
     catch (error) {
         next(error);
+    }
+};
+
+export const signout_post = async (req: Request, res: Response, next: NextFunction) => {
+    const refresh_token = req.cookies?.refresh_token as string | undefined;
+
+    if (!refresh_token) {
+        return res.status(400).end(); // no refresh token, no signout needed
+    }
+
+    try {
+        const decodedRefresh = jwt.verify(refresh_token, JWT_REFRESH_SECRET) as { userId: string; jti: string };
+
+        const row = await client.refreshToken.findUnique({
+            where: { id: decodedRefresh.jti },
+            select: { id: true, userId: true, revoked_at: true },
+        });
+
+        if (row && row.userId === decodedRefresh.userId && !row.revoked_at) {
+            await client.refreshToken.update({
+                where: { id: row.id },
+                data: { revoked_at: new Date() },
+            });
+        }
+        else{
+            return res.status(401).end();
+        }
+
+        res.clearCookie("refresh_token", { path: "/api/v1/auth" });
+        return res.status(204).end();
+    }
+    catch {
+        return res.status(401).end();
     }
 };

@@ -42,7 +42,7 @@ describe("signin success", () => {
         expect(refreshTokenCookie).toContain("HttpOnly");
         expect(refreshTokenCookie).toContain("Secure");
         expect(refreshTokenCookie).toContain("SameSite=None");
-        expect(refreshTokenCookie).toContain("Path=/api/v1/auth/refresh");
+        expect(refreshTokenCookie).toContain("Path=/api/v1/auth");
 
         // token exists
         expect(refreshTokenCookie).toMatch(/^refresh_token=[^;]+;/);
@@ -81,7 +81,7 @@ describe("signin success", () => {
         expect(refreshTokenCookie).toContain("HttpOnly");
         expect(refreshTokenCookie).toContain("Secure");
         expect(refreshTokenCookie).toContain("SameSite=None");
-        expect(refreshTokenCookie).toContain("Path=/api/v1/auth/refresh");
+        expect(refreshTokenCookie).toContain("Path=/api/v1/auth");
 
         // token exists
         expect(refreshTokenCookie).toMatch(/^refresh_token=[^;]+;/);

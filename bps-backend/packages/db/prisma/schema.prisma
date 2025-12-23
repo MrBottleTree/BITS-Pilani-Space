@@ -27,7 +27,7 @@ model User {
 
 model RefreshToken {
   id            String   @id @default(cuid())
-  token_hash    String   @unique
+  token_hash    String
   userId        String
   created_at    DateTime @default(now())
   expires_at    DateTime
