@@ -30,13 +30,11 @@ rebuild:
 ps:
 	$(COMPOSE) ps
 
-# Reset containers (keeps DB data)
 reset:
 	$(COMPOSE) down
 	$(COMPOSE) up --build -d
 	$(COMPOSE) $(PROFILE_TOOLS) run --rm migrate
 
-# HARD reset: deletes DB volume (ALL DATA LOST), then rebuild + migrate
 hard-reset:
 	$(COMPOSE) down -v
 	$(COMPOSE) up --build -d

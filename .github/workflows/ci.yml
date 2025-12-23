@@ -25,12 +25,18 @@ jobs:
         working-directory: bps-backend
         run: make run
 
-      # Wait on container health (does not depend on host port timing)
       - name: Wait for http container healthy
         run: |
           set -e
-          cid="$(docker ps -qf "name=bps-backend-http")"
+          cid="$(docker compose -f bps-backend/http-compose.yml ps -q http)"
           echo "http container id: $cid"
+
+          if [ -z "$cid" ]; then
+            echo "http container not found"
+            docker compose -f bps-backend/http-compose.yml ps
+            exit 1
+          fi
+
           for i in $(seq 1 90); do
             status="$(docker inspect -f '{{.State.Health.Status}}' "$cid" 2>/dev/null || true)"
             echo "health=$status"
@@ -40,8 +46,8 @@ jobs:
             fi
             sleep 2
           done
+
           echo "http did not become healthy"
-          docker ps -a
           docker logs --tail=400 "$cid" || true
           exit 1
 
