@@ -22,8 +22,8 @@ upon success:
 - server returns (HTTP 204 - No Content)
 
 unsuccessful events (missing fields like refresh token or access token):
-- server returns (HTTP 401 - Unauthorized)
+- server returns (HTTP 400 - Unauthorized)
 
 unsuccessful events (incorrect/corrupted fields):
-- server returns (HTTP 400 - Bad Request)
+- server returns (HTTP 401 - Bad Request)
 
