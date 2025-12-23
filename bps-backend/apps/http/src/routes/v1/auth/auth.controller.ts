@@ -115,7 +115,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
             httpOnly: true,
             secure: true,
             sameSite: 'none',
-            path: '/api/v1/auth/refresh',
+            path: '/api/v1/auth',
         });
 
 

@@ -54,7 +54,7 @@ Set-Cookie: refresh_token=...;
 HttpOnly;
 Secure;
 SameSite=Lax;
-Path=/api/v1/auth/refresh
+Path=/api/v1/auth
 ```
 
 ### Body:
