@@ -8,7 +8,7 @@
     "./client": "./src/index.ts"
   },
   "scripts": {
-    "build": "prisma generate",
+    "build": "npx prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

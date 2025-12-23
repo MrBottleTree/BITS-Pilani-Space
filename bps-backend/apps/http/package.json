@@ -4,9 +4,9 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "build": "npx esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node --format=esm --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\" --external:argon2 --tsconfig=tsconfig.json",
+    "build": "pnpm exec esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node --format=esm --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\" --external:argon2 --tsconfig=tsconfig.json",
     "start": "node dist/index.js",
-    "dev": "npm run build && npm run start"
+    "dev": "pnpm run build && pnpm run start"
   },
   "keywords": [],
   "author": "",

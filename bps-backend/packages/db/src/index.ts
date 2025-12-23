@@ -3,7 +3,7 @@ import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import "dotenv/config";
 
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl = process.env.DATABASE_URL || 'postgresql://bps:lol@localhost:5432/bps_db';
 if (!databaseUrl) {
   throw new Error("handi is not defined in environment variables");
 }
