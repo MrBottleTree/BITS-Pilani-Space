@@ -1,0 +1,61 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bps
+      POSTGRES_PASSWORD: lol
+      POSTGRES_DB: bps_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - bps_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bps -d bps_db"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  http:
+    build:
+      context: .
+      dockerfile: apps/http/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/repo
+      - /repo/node_modules
+      - /repo/apps/http/node_modules
+    environment:
+      NODE_ENV: development
+      CI: "true"
+      DATABASE_URL: postgres://bps:lol@postgres:5432/bps_db
+    command: sh -lc "pnpm install && pnpm -C packages/db exec prisma generate && pnpm -C apps/http run dev"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/v1/healthz >/dev/null 2>&1 || exit 1"]
+      interval: 2s
+      timeout: 2s
+      retries: 60
+
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/http/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/repo
+      - /repo/node_modules
+    working_dir: /repo/packages/db
+    environment:
+      CI: "true"
+      DATABASE_URL: postgres://bps:lol@postgres:5432/bps_db
+    command: sh -lc "pnpm install && npx prisma generate && npx prisma migrate dev"
+    profiles: ["tools"]
+
+volumes:
+  bps_pgdata:
