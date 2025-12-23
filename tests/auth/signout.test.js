@@ -22,9 +22,9 @@ describe("signout success", () => {
     let admin_access_token;
     let admin_refresh_token;
 
-    beforeAll(() => {
+    beforeAll( async () => {
         // Signup the user
-        const user_signup_resp = axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const user_signup_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
             username,
             password,
             email: user_email,
@@ -36,7 +36,7 @@ describe("signout success", () => {
         expect(user_signup_resp.data.id).toBeDefined();
 
         // Signup the admin
-        const admin_signup_resp = axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const admin_signup_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
             username: a_username,
             password,
             email: admin_email,
@@ -48,7 +48,7 @@ describe("signout success", () => {
         expect(admin_signup_resp.data.id).toBeDefined();
 
         // Signin the user
-        const user_signin_resp = axios.post(`${BACKEND_URL}/api/v1/auth/signin`, {
+        const user_signin_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, {
             identifier: username,
             password
         });
@@ -59,7 +59,6 @@ describe("signout success", () => {
         expect(user_signin_resp.data.id).toBeDefined();
         expect(user_signin_resp.data.type).toBe("USER");
         expect(user_signin_resp.data.access_token).toBeDefined();
-        expect(user_signin_resp.data.refresh_token).toBeDefined();
         expect(user_signin_resp.data.expires_in).toBeDefined();
 
         user_access_token = user_signin_resp.data.access_token; // get the access token
@@ -75,7 +74,7 @@ describe("signout success", () => {
         expect(user_refresh_token).toBeDefined();
 
         // Signin the admin
-        const admin_signin_resp = axios.post(`${BACKEND_URL}/api/v1/auth/signin`, {
+        const admin_signin_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, {
             identifier: a_username,
             password
         });
@@ -86,7 +85,6 @@ describe("signout success", () => {
         expect(admin_signin_resp.data.id).toBeDefined();
         expect(admin_signin_resp.data.type).toBe("ADMIN");
         expect(admin_signin_resp.data.access_token).toBeDefined();
-        expect(admin_signin_resp.data.refresh_token).toBeDefined();
         expect(admin_signin_resp.data.expires_in).toBeDefined();
 
         admin_access_token = admin_signin_resp.data.access_token;
@@ -115,7 +113,7 @@ describe("signout success", () => {
             },
         });
 
-        expect(signout_resp.status).toBe(200);
+        expect(signout_resp.status).toBe(204);
         // server also does not respond with anything
         // TODO: try to get access to a new access key from the invalidated access token to see if it is really invalidated
     });
@@ -129,7 +127,7 @@ describe("signout success", () => {
             },
         });
 
-        expect(signout_resp.status).toBe(200);
+        expect(signout_resp.status).toBe(204);
     });
 });
 
@@ -148,9 +146,9 @@ describe("signout failure", () => {
     let admin_access_token;
     let admin_refresh_token;
 
-    beforeAll(() => {
+    beforeAll( async () => {
         // Signup the user
-        const user_signup_resp = axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const user_signup_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
             username,
             password,
             email: user_email,
@@ -162,7 +160,7 @@ describe("signout failure", () => {
         expect(user_signup_resp.data.id).toBeDefined();
 
         // Signup the admin
-        const admin_signup_resp = axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const admin_signup_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
             username: a_username,
             password,
             email: admin_email,
@@ -174,7 +172,7 @@ describe("signout failure", () => {
         expect(admin_signup_resp.data.id).toBeDefined();
 
         // Signin the user
-        const user_signin_resp = axios.post(`${BACKEND_URL}/api/v1/auth/signin`, {
+        const user_signin_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, {
             identifier: username,
             password
         });
@@ -185,17 +183,22 @@ describe("signout failure", () => {
         expect(user_signin_resp.data.id).toBeDefined();
         expect(user_signin_resp.data.type).toBe("USER");
         expect(user_signin_resp.data.access_token).toBeDefined();
-        expect(user_signin_resp.data.refresh_token).toBeDefined();
         expect(user_signin_resp.data.expires_in).toBeDefined();
 
         user_access_token = user_signin_resp.data.access_token; // get the access token
-        user_refresh_token = user_signin_resp.data.refresh_token; // get the refresh token (this is the new feature added in the signin response)
+
+        const cookie = user_signin_resp.headers['set-cookie'];
+        expect(cookie).toBeDefined();
+
+        const refresh_token_cookie = cookie.find(c => c.startsWith('refresh_token='));
+        expect(refresh_token_cookie).toBeDefined();
+        user_refresh_token = refresh_token_cookie.split(';')[0].split('=')[1]; // get the refresh token from cookie
 
         expect(user_access_token).toBeDefined();
         expect(user_refresh_token).toBeDefined();
 
         // Signin the admin
-        const admin_signin_resp = axios.post(`${BACKEND_URL}/api/v1/auth/signin`, {
+        const admin_signin_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, {
             identifier: a_username,
             password
         });
@@ -206,11 +209,15 @@ describe("signout failure", () => {
         expect(admin_signin_resp.data.id).toBeDefined();
         expect(admin_signin_resp.data.type).toBe("ADMIN");
         expect(admin_signin_resp.data.access_token).toBeDefined();
-        expect(admin_signin_resp.data.refresh_token).toBeDefined();
         expect(admin_signin_resp.data.expires_in).toBeDefined();
 
         admin_access_token = admin_signin_resp.data.access_token;
-        admin_refresh_token = admin_signin_resp.data.refresh_token;
+        const a_cookie = admin_signin_resp.headers['set-cookie'];
+        expect(a_cookie).toBeDefined();
+
+        const a_refresh_token_cookie = a_cookie.find(c => c.startsWith('refresh_token='));
+        expect(a_refresh_token_cookie).toBeDefined();
+        admin_refresh_token = a_refresh_token_cookie.split(';')[0].split('=')[1];
 
         expect(admin_access_token).toBeDefined();
         expect(admin_refresh_token).toBeDefined();
@@ -233,7 +240,7 @@ describe("signout failure", () => {
         // Sign out the user with wrong refresh token
         const signout_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signout`, {}, {
             headers: {
-                Cookie: `refresh_token=wrongtoken`,
+                Cookie: "refresh_token=" + Date.now() + "_" + process.hrtime.bigint(),
                 Authorization: `Bearer ${user_access_token}`,
             },
         });
