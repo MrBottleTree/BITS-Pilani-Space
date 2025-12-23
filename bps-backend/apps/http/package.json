@@ -4,13 +4,26 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "pnpm exec esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node --format=esm --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\" --external:argon2 --tsconfig=tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "pnpm run build && pnpm run start"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
-    "express": "^5.2.1"
+    "@repo/db": "workspace:*",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "argon2": "^0.44.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "typescript": "^5.9.3",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.2"
   }
 }

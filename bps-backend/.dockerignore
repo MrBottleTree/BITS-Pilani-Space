@@ -1,0 +1,12 @@
+**/node_modules
+**/.pnpm-store
+.pnpm-store
+**/dist
+**/build
+**/.turbo
+**/.next
+**/.cache
+**/.git
+**/*.log
+.env
+.DS_Store
