@@ -16,30 +16,33 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Install make + curl
+      - name: Install make + wget
         run: |
           sudo apt-get update
-          sudo apt-get install -y make curl
+          sudo apt-get install -y make wget
 
-      # Starts postgres + http in background AND runs migrations (per your Makefile run target)
-      - name: Start backend (make run)
+      - name: Start backend + migrate (make run)
         working-directory: bps-backend
         run: make run
 
-      # Wait until backend is reachable from the runner host.
-      # Assumes your backend has GET /health -> 200.
-      - name: Wait for backend
+      # Wait on container health (does not depend on host port timing)
+      - name: Wait for http container healthy
         run: |
           set -e
+          cid="$(docker ps -qf "name=bps-backend-http")"
+          echo "http container id: $cid"
           for i in $(seq 1 90); do
-            if curl -fsS "http://localhost:3000/api/v1/healthz" > /dev/null; then
-              echo "Backend is up"
+            status="$(docker inspect -f '{{.State.Health.Status}}' "$cid" 2>/dev/null || true)"
+            echo "health=$status"
+            if [ "$status" = "healthy" ]; then
+              echo "Backend is healthy"
               exit 0
             fi
             sleep 2
           done
-          echo "Backend never became ready"
-          docker compose -f bps-backend/http-compose.yml logs --tail=300
+          echo "http did not become healthy"
+          docker ps -a
+          docker logs --tail=400 "$cid" || true
           exit 1
 
       - name: Install and run tests
@@ -53,4 +56,5 @@ jobs:
       - name: Shutdown (always)
         if: always()
         run: |
+          docker compose -f bps-backend/http-compose.yml logs --tail=200 || true
           docker compose -f bps-backend/http-compose.yml down -v
