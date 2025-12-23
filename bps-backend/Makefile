@@ -1,22 +1,22 @@
 COMPOSE := docker compose -f http-compose.yml
 PROFILE_TOOLS := --profile tools
 
-.PHONY: run up stop down restart logs migrate rebuild reset hard-reset ps
+.PHONY: run up migrate down
 
-# Always: start (detached) -> migrate
 run: up migrate
 
 up:
-	$(COMPOSE) up --build -d
+	$(COMPOSE) up --build -d postgres http
 
 migrate:
 	$(COMPOSE) $(PROFILE_TOOLS) run --rm migrate
 
-stop:
-	$(COMPOSE) stop
-
 down:
 	$(COMPOSE) down
+
+
+stop:
+	$(COMPOSE) stop
 
 restart:
 	$(COMPOSE) restart
