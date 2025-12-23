@@ -119,7 +119,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
         });
 
 
-        return res.status(200).json({ id: user.id, type: user.role, access_token: accessToken, expires_in: expires_in});
+        return res.status(200).json({ id: user.id, type: user.role, access_token: accessToken, refresh_token, expires_in: expires_in});
     }
     catch (error) {
         next(error);
