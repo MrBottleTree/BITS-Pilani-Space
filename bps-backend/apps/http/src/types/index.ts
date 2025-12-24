@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { z } from "zod";
+
 export const SignupScheme = z.object({
   username: z
     .string()
@@ -16,8 +18,28 @@ export const SignupScheme = z.object({
 
   password: z
     .string()
-    .min(8, "Password must be at least 8 characters")
-    .max(128, "Password too long"),
+    .min(12, "Password must be at least 12 characters")
+    .max(128, "Password too long")
+    .superRefine((val, ctx) => {
+      if (/\s/.test(val)) {
+        ctx.addIssue({ code: "custom", message: "Password must not contain whitespace" });
+      }
+      if (/[\x00-\x1F\x7F]/.test(val)) {
+        ctx.addIssue({ code: "custom", message: "Password must not contain control characters" });
+      }
+      if (!/[a-z]/.test(val)) {
+        ctx.addIssue({ code: "custom", message: "Password must contain a lowercase letter" });
+      }
+      if (!/[A-Z]/.test(val)) {
+        ctx.addIssue({ code: "custom", message: "Password must contain an uppercase letter" });
+      }
+      if (!/[0-9]/.test(val)) {
+        ctx.addIssue({ code: "custom", message: "Password must contain a number" });
+      }
+      if (!/[!@#$%^&*(),.?":{}|<>[\]\\\/~`+=_-]/.test(val)) {
+        ctx.addIssue({ code: "custom", message: "Password must contain a special character" });
+      }
+    }),
 });
 
 export const SigninScheme = z.object({
