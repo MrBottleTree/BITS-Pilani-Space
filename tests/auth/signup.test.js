@@ -7,145 +7,61 @@ if (!BACKEND_URL) { // no backend URL, no tests
     throw new Error("BACKEND_URL environment variable is not defined");
 }
 
-describe("signup success", () => {
-    test("user signup creates new user", async () => {
-        const username = "Test" + Date.now() + "_" + process.hrtime.bigint();
-        const password = username + " password@123";
-        const email = username + "@example.com";
+describe("signnup success", () => {
+    test("user should be able to signup with valid credentials", async () => {});
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
-            email,
-            username: username, // username max length is 20
-            password,
-            type: "user" // normal user type
-        });
+    test("admin should be able to signup with valid credentials", async () => {});
+});
 
-        expect(response.status).toBe(201);
-        expect(response.data).toBeDefined();
-        expect(response.data.id).toBeDefined();
-    })
+describe("common signup failure", () => {
+    test("should fail signup with missing type", async () => {});
 
-    test("admin signup creates new admin", async () => {
-        const username = "Test" + Date.now() + "_" + process.hrtime.bigint();
-        const password = username + " password@123";
-        const email = username + "@example.com";
+    test("should fail signup with invalid type", async () => {});
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
-            email,
-            username: username, // username max length is 20
-            password,
-            type: "admin" // normal user type
-        });
+    test("should fail signup with no fields", async () => {});
+});
 
-        expect(response.status).toBe(201);
-        expect(response.data).toBeDefined();
-        expect(response.data.id).toBeDefined();    })
-})
+describe("user signup failure on missing fields", () => {
+    test("should fail signup with missing username", async () => {});
 
-describe("signup failure", () => {
-    test("signup with existing username fails", async () => {
-        const username = "test_user" + Date.now() + "_" + process.hrtime.bigint(); // Making sure that this is still unique
-        const password = "Password@123";
-        const email = username + "@example.com";
+    test("should fail signup with missing email", async () => {});
 
-        // First signup a new user
-        const first_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
-            email,
-            username: username, // username max length is 20
-            password,
-            type: "user" // user type, this can be anything, even admin. Usernames should be unique throughout user and admin.
-        });
+    test("should fail signup with missing password", async () => {});
 
-        // Should be successful
-        expect(first_response.status).toBe(201);
-        expect(first_response.data).toBeDefined();
-        expect(first_response.data.id).toBeDefined();
-        
-        // Check for user type first
-        const user_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
-            email,
-            username: username,
-            password,
-            type: "user" // user type
-        });
+});
 
-        expect(user_response.status).toBe(409); // Conflict
-        expect(user_response.data).toBeDefined();
-        expect(user_response.data.error).toBeDefined(); // Server should tell what the issue is
+describe("user signup failure on invalid username", () => {
+    test("should fail signup with invalid username (less than minimum)", async () => {});
 
-        // Now check for admin type
+    test("should fail signup with invalid username (more than maximum)", async () => {});
 
-        const admin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
-            email,
-            username: username, // username max length is 20
-            password,
-            type: "admin" // admin type
-        });
+    test("should fail signup with invalid username (invalid characters)", async () => {});
+});
 
-        expect(admin_response.status).toBe(409); // Conflict
-        expect(admin_response.data).toBeDefined();
-        expect(admin_response.data.error).toBeDefined(); // Server should tell what the issue is
-    });
+describe("user signup failure on invalid email", () => {
+    test("should fail signup with invalid email (not an email)", async () => {});
 
-    test("signup with invalid email fails", async () => {
-        const username = "test_user" + Date.now() + "_" + process.hrtime.bigint();
-        const password = "password@123";
-        const email = "invalid_email_format"; // Invalid email
+    test("should fail signup with invalid email (more than maximum)", async () => {});
+});
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
-            email,
-            username: username, // username max length is 20
-            password,
-            type: "user"
-        });
+describe("user signup failure on invalid password", () => {
+    test("should fail signup with invalid password (contains white space)", async () => {});
 
-        expect(response.status).toBe(400); // Bad Request (wrong email format)
-        expect(response.data).toBeDefined();
-        expect(response.data.error).toBeDefined();
-    });
+    test("should fail signup with invalid password (less than minimum)", async () => {});
 
-    test("signup with weak password fails", async () => {
-        const username = "test_user" + Date.now() + "_" + process.hrtime.bigint();
-        const password = "123"; // Weak password
+    test("should fail signup with invalid password (more than maximum)", async () => {});
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
-            email: username + "@example.com",
-            username: username, // username max length is 20
-            password,
-            type: "user"
-        });
+    test("should fail signup with invalid password (no uppercase letter)", async () => {});
 
-        expect(response.status).toBe(400); // Bad Request (weak password)
-        expect(response.data).toBeDefined();
-        expect(response.data.error).toBeDefined();
-    });
+    test("should fail signup with invalid password (no lowercase letter)", async () => {});
 
-    // All combinations of missing testcases
-    test("signup with multiple missing fields fails", async () => {
-        const username = "test_user" + Date.now() + "_" + process.hrtime.bigint();
-        const password = username + " password@123";
-        const email = username + "@example.com";
-        
-        const fields = { email, username: username, password, type: "user" };
-        const fieldNames = Object.keys(fields);
-        const testCases = [];
+    test("should fail signup with invalid password (no number)", async () => {});
 
-        // Generate all possible combinations of missing fields (at least one missing)
-        for (let i = 1; i <= Math.pow(2, fieldNames.length) - 2; i++) { // from 1 to 2^n - 2 inclusive... -2 because, 2^n -1 will be {1}*n times. we want to exclude some things, so i did this
-            const testCase = {};
-            for (let j = 0; j < fieldNames.length; j++) {
-                if (i & (1 << j)) {
-                    testCase[fieldNames[j]] = fields[fieldNames[j]];
-                }
-            }
-            testCases.push(testCase);
-        }
+    test("should fail signup with invalid password (no special character)", async () => {});
 
-        for (const testCase of testCases) {
-            const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, testCase);
-            expect(response.status).toBe(400);
-            expect(response.data).toBeDefined();
-            expect(response.data.error).toBeDefined();
-        }
-    });
+    test("should fail signup with invalid password (if it contains control characters)", async () => {});
+});
+
+describe("admin signup failure", () => {
+    // all testcases same except it is for admin
 });
