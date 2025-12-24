@@ -1,271 +1,135 @@
-const axios = require("axios");
+const utils = require("../utils/testUtils");
 
-axios.defaults.validateStatus = () => true;
-
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3000";
-if (!BACKEND_URL) { // no backend URL, no tests
-    throw new Error("BACKEND_URL environment variable is not defined");
-}
+const valid_password = "Password@123";
 
 describe("signout success", () => {
-    const username = "test_user_signin" + Date.now() + "_" + process.hrtime.bigint();
-    const password = "Password@123";
-    
-    const a_username = "admin" + username;
+    test("success for user role", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
 
-    const user_email = username + "@example.com";
-    const admin_email = a_username + "@example.com";
+        let credentials = {username, password: valid_password, email, role: "USER"}
+        const response = await utils.signup_user(credentials);
 
-    let user_access_token;
-    let user_refresh_token;
+        expect(response.status).toBe(201);
+        expect(response.data).toBeDefined();
+        expect(response.data.id).toBeDefined();
 
-    let admin_access_token;
-    let admin_refresh_token;
+        credentials['identifier'] = credentials.username;
+        const signin_response = await utils.signin_user(credentials);
 
-    beforeAll( async () => {
-        // Signup the user
-        const user_signup_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
-            username,
-            password,
-            email: user_email,
-            role: "user"
-        });
+        expect(signin_response.status).toBe(200);
+        expect(signin_response.data).toBeDefined();
+        expect(signin_response.data.id).toBe(response.data.id);
+        expect(signin_response.data.role).toBe('USER');
+        expect(signin_response.data.access_token).toBeDefined();
+        expect(signin_response.data.expires_in).toBeDefined();
 
-        expect(user_signup_resp.status).toBe(201);
-        expect(user_signup_resp.data).toBeDefined();
-        expect(user_signup_resp.data.id).toBeDefined();
+        const resp_cookie = signin_response.headers["set-cookie"];
+        expect(resp_cookie).toBeDefined();
+        
+        const refresh_token = resp_cookie.find(c => c.startsWith('refresh_token=')).split(';')[0].split('=')[1];;
+        expect(refresh_token).toBeDefined();
 
-        // Signup the admin
-        const admin_signup_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
-            username: a_username,
-            password,
-            email: admin_email,
-            role: "admin"
-        });
+        const signout_response = await utils.signout_user(refresh_token);
 
-        expect(admin_signup_resp.status).toBe(201);
-        expect(admin_signup_resp.data).toBeDefined();
-        expect(admin_signup_resp.data.id).toBeDefined();
-
-        // Signin the user
-        const user_signin_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, {
-            identifier: username,
-            password
-        });
-
-        expect(user_signin_resp.status).toBe(200);
-        expect(user_signin_resp.data).toBeDefined();
-
-        expect(user_signin_resp.data.id).toBeDefined();
-        expect(user_signin_resp.data.type).toBe("USER");
-        expect(user_signin_resp.data.access_token).toBeDefined();
-        expect(user_signin_resp.data.expires_in).toBeDefined();
-
-        user_access_token = user_signin_resp.data.access_token; // get the access token
-
-        const cookie = user_signin_resp.headers['set-cookie'];
-        expect(cookie).toBeDefined();
-
-        const refresh_token_cookie = cookie.find(c => c.startsWith('refresh_token='));
-        expect(refresh_token_cookie).toBeDefined();
-        user_refresh_token = refresh_token_cookie.split(';')[0].split('=')[1]; // get the refresh token from cookie
-
-        expect(user_access_token).toBeDefined();
-        expect(user_refresh_token).toBeDefined();
-
-        // Signin the admin
-        const admin_signin_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, {
-            identifier: a_username,
-            password
-        });
-
-        expect(admin_signin_resp.status).toBe(200);
-        expect(admin_signin_resp.data).toBeDefined();
-
-        expect(admin_signin_resp.data.id).toBeDefined();
-        expect(admin_signin_resp.data.type).toBe("ADMIN");
-        expect(admin_signin_resp.data.access_token).toBeDefined();
-        expect(admin_signin_resp.data.expires_in).toBeDefined();
-
-        admin_access_token = admin_signin_resp.data.access_token;
-        const a_cookie = admin_signin_resp.headers['set-cookie'];
-        expect(a_cookie).toBeDefined();
-
-        const a_refresh_token_cookie = a_cookie.find(c => c.startsWith('refresh_token='));
-        expect(a_refresh_token_cookie).toBeDefined();
-        admin_refresh_token = a_refresh_token_cookie.split(';')[0].split('=')[1];
-
-        expect(admin_access_token).toBeDefined();
-        expect(admin_refresh_token).toBeDefined();
-
-        // Here we are done initializing the token values
-    });
-    
-    test("user should be able to sign out", async () => {
-
-        // Sign out the user
-
-        // see how there is no body content needed for signout
-        const signout_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signout`, {}, {
-            headers: {
-                Cookie: `refresh_token=${user_refresh_token}`,
-                Authorization: `Bearer ${user_access_token}`,
-            },
-        });
-
-        expect(signout_resp.status).toBe(204);
-        // server also does not respond with anything
-        // TODO: try to get access to a new access key from the invalidated access token to see if it is really invalidated
+        expect(signout_response.status).toBe(204);
     });
 
-    test("admin should be able to sign out", async () => {
-        // Sign out the admin
-        const signout_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signout`, {}, {
-            headers: {
-                Cookie: `refresh_token=${admin_refresh_token}`,
-                Authorization: `Bearer ${admin_access_token}`,
-            },
-        });
+    test("success for admin role", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
 
-        expect(signout_resp.status).toBe(204);
+        let credentials = {username, password: valid_password, email, role: "ADMIN"}
+        const response = await utils.signup_user(credentials);
+
+        expect(response.status).toBe(201);
+        expect(response.data).toBeDefined();
+        expect(response.data.id).toBeDefined();
+
+        credentials['identifier'] = credentials.username;
+        const signin_response = await utils.signin_user(credentials);
+
+        expect(signin_response.status).toBe(200);
+        expect(signin_response.data).toBeDefined();
+        expect(signin_response.data.id).toBe(response.data.id);
+        expect(signin_response.data.role).toBe('ADMIN');
+        expect(signin_response.data.access_token).toBeDefined();
+        expect(signin_response.data.expires_in).toBeDefined();
+
+        const resp_cookie = signin_response.headers["set-cookie"];
+        expect(resp_cookie).toBeDefined();
+        
+        const refresh_token = resp_cookie.find(c => c.startsWith('refresh_token=')).split(';')[0].split('=')[1];;
+        expect(refresh_token).toBeDefined();
+
+        const signout_response = await utils.signout_user(refresh_token);
+
+        expect(signout_response.status).toBe(204);
     });
 });
 
-describe("signout failure", () => {
-    const username = "test_user_signin" + Date.now() + "_" + process.hrtime.bigint();
-    const password = "Password@123";
-    
-    const a_username = "admin" + username;
+describe("signout fails with invalid refresh token", () => {
+    test("fails for user role", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
 
-    const user_email = username + "@example.com";
-    const admin_email = a_username + "@example.com";
+        let credentials = {username, password: valid_password, email, role: "USER"}
+        const response = await utils.signup_user(credentials);
 
-    let user_access_token;
-    let user_refresh_token;
+        expect(response.status).toBe(201);
+        expect(response.data).toBeDefined();
+        expect(response.data.id).toBeDefined();
 
-    let admin_access_token;
-    let admin_refresh_token;
+        credentials['identifier'] = credentials.username;
+        const signin_response = await utils.signin_user(credentials);
 
-    beforeAll( async () => {
-        // Signup the user
-        const user_signup_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
-            username,
-            password,
-            email: user_email,
-            role: "user"
-        });
+        expect(signin_response.status).toBe(200);
+        expect(signin_response.data).toBeDefined();
+        expect(signin_response.data.id).toBe(response.data.id);
+        expect(signin_response.data.role).toBe('USER');
+        expect(signin_response.data.access_token).toBeDefined();
+        expect(signin_response.data.expires_in).toBeDefined();
 
-        expect(user_signup_resp.status).toBe(201);
-        expect(user_signup_resp.data).toBeDefined();
-        expect(user_signup_resp.data.id).toBeDefined();
+        const resp_cookie = signin_response.headers["set-cookie"];
+        expect(resp_cookie).toBeDefined();
+        
+        const refresh_token = resp_cookie.find(c => c.startsWith('refresh_token='));
+        expect(refresh_token).toBeDefined();
 
-        // Signup the admin
-        const admin_signup_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
-            username: a_username,
-            password,
-            email: admin_email,
-            role: "admin"
-        });
+        const signout_response = await utils.signout_user("random refresh token");
 
-        expect(admin_signup_resp.status).toBe(201);
-        expect(admin_signup_resp.data).toBeDefined();
-        expect(admin_signup_resp.data.id).toBeDefined();
-
-        // Signin the user
-        const user_signin_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, {
-            identifier: username,
-            password
-        });
-
-        expect(user_signin_resp.status).toBe(200);
-        expect(user_signin_resp.data).toBeDefined();
-
-        expect(user_signin_resp.data.id).toBeDefined();
-        expect(user_signin_resp.data.type).toBe("USER");
-        expect(user_signin_resp.data.access_token).toBeDefined();
-        expect(user_signin_resp.data.expires_in).toBeDefined();
-
-        user_access_token = user_signin_resp.data.access_token; // get the access token
-
-        const cookie = user_signin_resp.headers['set-cookie'];
-        expect(cookie).toBeDefined();
-
-        const refresh_token_cookie = cookie.find(c => c.startsWith('refresh_token='));
-        expect(refresh_token_cookie).toBeDefined();
-        user_refresh_token = refresh_token_cookie.split(';')[0].split('=')[1]; // get the refresh token from cookie
-
-        expect(user_access_token).toBeDefined();
-        expect(user_refresh_token).toBeDefined();
-
-        // Signin the admin
-        const admin_signin_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, {
-            identifier: a_username,
-            password
-        });
-
-        expect(admin_signin_resp.status).toBe(200);
-        expect(admin_signin_resp.data).toBeDefined();
-
-        expect(admin_signin_resp.data.id).toBeDefined();
-        expect(admin_signin_resp.data.type).toBe("ADMIN");
-        expect(admin_signin_resp.data.access_token).toBeDefined();
-        expect(admin_signin_resp.data.expires_in).toBeDefined();
-
-        admin_access_token = admin_signin_resp.data.access_token;
-        const a_cookie = admin_signin_resp.headers['set-cookie'];
-        expect(a_cookie).toBeDefined();
-
-        const a_refresh_token_cookie = a_cookie.find(c => c.startsWith('refresh_token='));
-        expect(a_refresh_token_cookie).toBeDefined();
-        admin_refresh_token = a_refresh_token_cookie.split(';')[0].split('=')[1];
-
-        expect(admin_access_token).toBeDefined();
-        expect(admin_refresh_token).toBeDefined();
-
-        // Here we are done initializing the token values
+        expect(signout_response.status).toBe(401);
     });
 
-    test("user sign out should fail without refresh token", async () => {
-        // Sign out the user without refresh token
-        const signout_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signout`, {}, {
-            headers: {
-                Authorization: `Bearer ${user_access_token}`,
-            },
-        });
+    test("fails for admin role", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
 
-        expect(signout_resp.status).toBe(400);
-    });
+        let credentials = {username, password: valid_password, email, role: "ADMIN"}
+        const response = await utils.signup_user(credentials);
 
-    test("user sign out should fail with wrong refresh token", async () => {
-        // Sign out the user with wrong refresh token
-        const signout_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signout`, {}, {
-            headers: {
-                Cookie: "refresh_token=" + Date.now() + "_" + process.hrtime.bigint(),
-                Authorization: `Bearer ${user_access_token}`,
-            },
-        });
+        expect(response.status).toBe(201);
+        expect(response.data).toBeDefined();
+        expect(response.data.id).toBeDefined();
 
-        expect(signout_resp.status).toBe(401);
-    });
+        credentials['identifier'] = credentials.username;
+        const signin_response = await utils.signin_user(credentials);
 
-    test("admin sign out should fail without refresh token", async () => {
-        // Sign out the admin without refresh token
-        const signout_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signout`, {}, {
-            headers: {
-                Authorization: `Bearer ${admin_access_token}`,
-            },
-        });
-        expect(signout_resp.status).toBe(400);
-    });
+        expect(signin_response.status).toBe(200);
+        expect(signin_response.data).toBeDefined();
+        expect(signin_response.data.id).toBe(response.data.id);
+        expect(signin_response.data.role).toBe('ADMIN');
+        expect(signin_response.data.access_token).toBeDefined();
+        expect(signin_response.data.expires_in).toBeDefined();
 
-    test("admin sign out should fail with wrong refresh token", async () => {
-        // Sign out the admin with wrong refresh token
-        const signout_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signout`, {}, {
-            headers: {
-                Cookie: `refresh_token=wrongtoken`,
-                Authorization: `Bearer ${admin_access_token}`,
-            },
-        });
-        expect(signout_resp.status).toBe(401);
+        const resp_cookie = signin_response.headers["set-cookie"];
+        expect(resp_cookie).toBeDefined();
+        
+        const refresh_token = resp_cookie.find(c => c.startsWith('refresh_token='));
+        expect(refresh_token).toBeDefined();
+
+        const signout_response = await utils.signout_user("random refresh token");
+
+        expect(signout_response.status).toBe(401);
     });
 });

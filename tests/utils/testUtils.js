@@ -26,6 +26,14 @@ async function signin_user(credentials){
     return response;
 }
 
+async function signout_user(refresh_token){
+    return await axios.post(`${BACKEND_URL}/api/${API_VERSION}/auth/signout`, {}, {
+        headers: {
+            Cookie: `refresh_token=${refresh_token}`
+        }
+    });
+}
+
 async function refresh_token(refreshToken){
     return await axios.post(`${BACKEND_URL}/api/${API_VERSION}/auth/refresh`,{}, {
         headers: {
@@ -41,5 +49,6 @@ module.exports = {
   makeUniqueUsername,
   signup_user,
   signin_user,
+  signout_user,
   refresh_token,
 };
