@@ -2,21 +2,44 @@ const axios = require("axios");
 
 axios.defaults.validateStatus = () => true;
 
+const API_VERSION = 'v1';
+
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3000";
 
 function makeUniqueUsername(prefix = "test") {
-  const safePrefix =
-    String(prefix).replace(/[^a-zA-Z0-9_]/g, "_").slice(0, 8) || "test";
+    const safePrefix = String(prefix).replace(/[^a-zA-Z0-9_]/g, "_").slice(0, 8) || "test";
 
-  const t = Date.now().toString(36);                  // time entropy
-  const pid = process.pid.toString(36);               // process entropy
-  const hr = (process.hrtime.bigint() & 0xfffffn).toString(36); // extra entropy
+    const t = Date.now().toString(36); // time entropy
+    const pid = process.pid.toString(36); // process entropy
+    const hr = (process.hrtime.bigint() & 0xfffffn).toString(36); // extra entropy
 
-  return `${safePrefix}_${t}_${pid}_${hr}`.slice(0, 32);
+    return `${safePrefix}_${t}_${pid}_${hr}`.slice(0, 32);
+}
+
+async function signup_user(credentials) {
+    const response = await axios.post(`${BACKEND_URL}/api/${API_VERSION}/auth/signup`, credentials);
+    return response;
+}
+
+async function signin_user(credentials){
+    const response = await axios.post(`${BACKEND_URL}/api/${API_VERSION}/auth/signin`, credentials);
+    return response;
+}
+
+async function refresh_token(refreshToken){
+    return await axios.post(`${BACKEND_URL}/api/${API_VERSION}/auth/refresh`,{}, {
+        headers: {
+            Cookie: `refresh_token=${refreshToken}`
+        }
+    });
 }
 
 module.exports = {
   axios,
+  API_VERSION,
   BACKEND_URL,
   makeUniqueUsername,
+  signup_user,
+  signin_user,
+  refresh_token,
 };

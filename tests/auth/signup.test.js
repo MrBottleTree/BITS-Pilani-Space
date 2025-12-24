@@ -1,13 +1,13 @@
-const { axios, BACKEND_URL, makeUniqueUsername } = require("../utils/testUtils");
+const utils = require("../utils/testUtils");
 
 const valid_password = "Password@123";
 
 describe("signnup success", () => {
     test("user should be able to signup with valid credentials", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: valid_password,
             email,
@@ -20,10 +20,10 @@ describe("signnup success", () => {
     });
 
     test("admin should be able to signup with valid credentials", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: valid_password,
             email,
@@ -38,10 +38,10 @@ describe("signnup success", () => {
 
 describe("common signup failure", () => {
     test("should fail signup with missing role", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: valid_password,
             email,
@@ -54,10 +54,10 @@ describe("common signup failure", () => {
     });
 
     test("should fail signup with invalid role", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: valid_password,
             email,
@@ -71,16 +71,16 @@ describe("common signup failure", () => {
     });
 
     test("should fail signup with no fields", async () => {
-        expect((await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {})).status).toBe(400);
+        expect((await utils.signup_user({})).status).toBe(400);
     });
 });
 
 describe("user signup failure on missing fields", () => {
     test("should fail signup with missing username", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             password: valid_password,
             email,
             role: "USER"
@@ -93,9 +93,9 @@ describe("user signup failure on missing fields", () => {
     });
 
     test("should fail signup with missing email", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: valid_password,
             role: "USER"
@@ -108,10 +108,10 @@ describe("user signup failure on missing fields", () => {
     });
 
     test("should fail signup with missing password", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             email,
             role: "USER"
@@ -127,10 +127,10 @@ describe("user signup failure on missing fields", () => {
 
 describe("user signup failure on invalid username", () => {
     test("should fail signup with invalid username (less than minimum)", async () => {
-        const username = makeUniqueUsername().substring(0,2);
+        const username = utils.makeUniqueUsername().substring(0,2);
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: valid_password,
             email,
@@ -144,10 +144,10 @@ describe("user signup failure on invalid username", () => {
     });
 
     test("should fail signup with invalid username (more than maximum)", async () => {
-        const username = makeUniqueUsername().repeat(2);
+        const username = utils.makeUniqueUsername().repeat(2);
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: valid_password,
             email,
@@ -161,10 +161,10 @@ describe("user signup failure on invalid username", () => {
     });
 
     test("should fail signup with invalid username (invalid characters)", async () => {
-        const username = makeUniqueUsername() + "!";
+        const username = utils.makeUniqueUsername() + "!";
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: valid_password,
             email,
@@ -180,10 +180,10 @@ describe("user signup failure on invalid username", () => {
 
 describe("user signup failure on invalid email", () => {
     test("should fail signup with invalid email (not an email)", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "!@@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: valid_password,
             email,
@@ -197,10 +197,10 @@ describe("user signup failure on invalid email", () => {
     });
 
     test("should fail signup with invalid email (more than maximum)", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username.repeat(150) + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: valid_password,
             email,
@@ -216,10 +216,10 @@ describe("user signup failure on invalid email", () => {
 
 describe("user signup failure on invalid password", () => {
     test("should fail signup with invalid password (contains white space)", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: valid_password + ' ',
             email,
@@ -233,10 +233,10 @@ describe("user signup failure on invalid password", () => {
     });
 
     test("should fail signup with invalid password (less than minimum)", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: "awd",
             email,
@@ -250,10 +250,10 @@ describe("user signup failure on invalid password", () => {
     });
 
     test("should fail signup with invalid password (more than maximum)", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: valid_password.repeat(20),
             email,
@@ -267,10 +267,10 @@ describe("user signup failure on invalid password", () => {
     });
 
     test("should fail signup with invalid password (no uppercase letter)", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: "password@123",
             email,
@@ -284,10 +284,10 @@ describe("user signup failure on invalid password", () => {
     });
 
     test("should fail signup with invalid password (no lowercase letter)", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: "PASSWORD@123",
             email,
@@ -301,10 +301,10 @@ describe("user signup failure on invalid password", () => {
     });
 
     test("should fail signup with invalid password (no number)", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: "Passwordawd@@",
             email,
@@ -318,10 +318,10 @@ describe("user signup failure on invalid password", () => {
     });
 
     test("should fail signup with invalid password (no special character)", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: "Password123",
             email,
@@ -335,10 +335,10 @@ describe("user signup failure on invalid password", () => {
     });
 
     test("should fail signup with invalid password (if it contains control characters)", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: `GoodPass1!\x01`,
             email,
@@ -354,10 +354,10 @@ describe("user signup failure on invalid password", () => {
 
 describe("admin signup failure on missing fields", () => {
     test("should fail signup with missing username", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             password: valid_password,
             email,
             role: "ADMIN"
@@ -370,9 +370,9 @@ describe("admin signup failure on missing fields", () => {
     });
 
     test("should fail signup with missing email", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: valid_password,
             role: "ADMIN"
@@ -385,10 +385,10 @@ describe("admin signup failure on missing fields", () => {
     });
 
     test("should fail signup with missing password", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             email,
             role: "ADMIN"
@@ -404,10 +404,10 @@ describe("admin signup failure on missing fields", () => {
 
 describe("admin signup failure on invalid username", () => {
     test("should fail signup with invalid username (less than minimum)", async () => {
-        const username = makeUniqueUsername().substring(0,2);
+        const username = utils.makeUniqueUsername().substring(0,2);
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: valid_password,
             email,
@@ -421,10 +421,10 @@ describe("admin signup failure on invalid username", () => {
     });
 
     test("should fail signup with invalid username (more than maximum)", async () => {
-        const username = makeUniqueUsername().repeat(2);
+        const username = utils.makeUniqueUsername().repeat(2);
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: valid_password,
             email,
@@ -438,10 +438,10 @@ describe("admin signup failure on invalid username", () => {
     });
 
     test("should fail signup with invalid username (invalid characters)", async () => {
-        const username = makeUniqueUsername() + "!";
+        const username = utils.makeUniqueUsername() + "!";
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: valid_password,
             email,
@@ -457,10 +457,10 @@ describe("admin signup failure on invalid username", () => {
 
 describe("admin signup failure on invalid email", () => {
     test("should fail signup with invalid email (not an email)", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "!@@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: valid_password,
             email,
@@ -474,10 +474,10 @@ describe("admin signup failure on invalid email", () => {
     });
 
     test("should fail signup with invalid email (more than maximum)", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username.repeat(15) + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: valid_password,
             email,
@@ -493,10 +493,10 @@ describe("admin signup failure on invalid email", () => {
 
 describe("admin signup failure on invalid password", () => {
     test("should fail signup with invalid password (contains white space)", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: valid_password + ' ',
             email,
@@ -510,10 +510,10 @@ describe("admin signup failure on invalid password", () => {
     });
 
     test("should fail signup with invalid password (less than minimum)", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: "awd",
             email,
@@ -527,10 +527,10 @@ describe("admin signup failure on invalid password", () => {
     });
 
     test("should fail signup with invalid password (more than maximum)", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: valid_password.repeat(20),
             email,
@@ -544,10 +544,10 @@ describe("admin signup failure on invalid password", () => {
     });
 
     test("should fail signup with invalid password (no uppercase letter)", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: "password@123",
             email,
@@ -561,10 +561,10 @@ describe("admin signup failure on invalid password", () => {
     });
 
     test("should fail signup with invalid password (no lowercase letter)", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: "PASSWORD@123",
             email,
@@ -578,10 +578,10 @@ describe("admin signup failure on invalid password", () => {
     });
 
     test("should fail signup with invalid password (no number)", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: "Passwordawd@@",
             email,
@@ -595,10 +595,10 @@ describe("admin signup failure on invalid password", () => {
     });
 
     test("should fail signup with invalid password (no special character)", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: "Password123",
             email,
@@ -612,10 +612,10 @@ describe("admin signup failure on invalid password", () => {
     });
 
     test("should fail signup with invalid password (if it contains control characters)", async () => {
-        const username = makeUniqueUsername();
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
             username,
             password: `GoodPass1!\x01`,
             email,
