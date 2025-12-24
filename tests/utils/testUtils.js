@@ -34,7 +34,7 @@ async function signout_user(refresh_token){
     });
 }
 
-async function refresh_token(refreshToken){
+async function refresh_token(refreshToken = ""){
     return await axios.post(`${BACKEND_URL}/api/${API_VERSION}/auth/refresh`,{}, {
         headers: {
             Cookie: `refresh_token=${refreshToken}`
