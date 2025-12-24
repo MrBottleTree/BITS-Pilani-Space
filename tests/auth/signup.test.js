@@ -1,151 +1,630 @@
-const axios = require("axios");
+const utils = require("../utils/testUtils");
 
-axios.defaults.validateStatus = () => true;
+const valid_password = "Password@123";
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3000";
-if (!BACKEND_URL) { // no backend URL, no tests
-    throw new Error("BACKEND_URL environment variable is not defined");
-}
-
-describe("signup success", () => {
-    test("user signup creates new user", async () => {
-        const username = "Test" + Date.now() + "_" + process.hrtime.bigint();
-        const password = username + " password@123";
+describe("signnup success", () => {
+    test("user should be able to signup with valid credentials", async () => {
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
+            username,
+            password: valid_password,
             email,
-            username: username, // username max length is 20
-            password,
-            type: "user" // normal user type
+            role: "USER"
         });
 
         expect(response.status).toBe(201);
         expect(response.data).toBeDefined();
         expect(response.data.id).toBeDefined();
-    })
+    });
 
-    test("admin signup creates new admin", async () => {
-        const username = "Test" + Date.now() + "_" + process.hrtime.bigint();
-        const password = username + " password@123";
+    test("admin should be able to signup with valid credentials", async () => {
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
+            username,
+            password: valid_password,
             email,
-            username: username, // username max length is 20
-            password,
-            type: "admin" // normal user type
+            role: "ADMIN"
         });
 
         expect(response.status).toBe(201);
         expect(response.data).toBeDefined();
-        expect(response.data.id).toBeDefined();    })
-})
+        expect(response.data.id).toBeDefined();
+    });
+});
 
-describe("signup failure", () => {
-    test("signup with existing username fails", async () => {
-        const username = "test_user" + Date.now() + "_" + process.hrtime.bigint(); // Making sure that this is still unique
-        const password = "Password@123";
+describe("common signup failure", () => {
+    test("should fail signup with missing role", async () => {
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        // First signup a new user
-        const first_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const response = await utils.signup_user({
+            username,
+            password: valid_password,
             email,
-            username: username, // username max length is 20
-            password,
-            type: "user" // user type, this can be anything, even admin. Usernames should be unique throughout user and admin.
         });
 
-        // Should be successful
-        expect(first_response.status).toBe(201);
-        expect(first_response.data).toBeDefined();
-        expect(first_response.data.id).toBeDefined();
-        
-        // Check for user type first
-        const user_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
-            email,
-            username: username,
-            password,
-            type: "user" // user type
-        });
-
-        expect(user_response.status).toBe(409); // Conflict
-        expect(user_response.data).toBeDefined();
-        expect(user_response.data.error).toBeDefined(); // Server should tell what the issue is
-
-        // Now check for admin type
-
-        const admin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
-            email,
-            username: username, // username max length is 20
-            password,
-            type: "admin" // admin type
-        });
-
-        expect(admin_response.status).toBe(409); // Conflict
-        expect(admin_response.data).toBeDefined();
-        expect(admin_response.data.error).toBeDefined(); // Server should tell what the issue is
-    });
-
-    test("signup with invalid email fails", async () => {
-        const username = "test_user" + Date.now() + "_" + process.hrtime.bigint();
-        const password = "password@123";
-        const email = "invalid_email_format"; // Invalid email
-
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
-            email,
-            username: username, // username max length is 20
-            password,
-            type: "user"
-        });
-
-        expect(response.status).toBe(400); // Bad Request (wrong email format)
+        expect(response.status).toBe(400);
         expect(response.data).toBeDefined();
         expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
     });
 
-    test("signup with weak password fails", async () => {
-        const username = "test_user" + Date.now() + "_" + process.hrtime.bigint();
-        const password = "123"; // Weak password
-
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
-            email: username + "@example.com",
-            username: username, // username max length is 20
-            password,
-            type: "user"
-        });
-
-        expect(response.status).toBe(400); // Bad Request (weak password)
-        expect(response.data).toBeDefined();
-        expect(response.data.error).toBeDefined();
-    });
-
-    // All combinations of missing testcases
-    test("signup with multiple missing fields fails", async () => {
-        const username = "test_user" + Date.now() + "_" + process.hrtime.bigint();
-        const password = username + " password@123";
+    test("should fail signup with invalid role", async () => {
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
-        
-        const fields = { email, username: username, password, type: "user" };
-        const fieldNames = Object.keys(fields);
-        const testCases = [];
 
-        // Generate all possible combinations of missing fields (at least one missing)
-        for (let i = 1; i <= Math.pow(2, fieldNames.length) - 2; i++) { // from 1 to 2^n - 2 inclusive... -2 because, 2^n -1 will be {1}*n times. we want to exclude some things, so i did this
-            const testCase = {};
-            for (let j = 0; j < fieldNames.length; j++) {
-                if (i & (1 << j)) {
-                    testCase[fieldNames[j]] = fields[fieldNames[j]];
-                }
-            }
-            testCases.push(testCase);
-        }
+        const response = await utils.signup_user({
+            username,
+            password: valid_password,
+            email,
+            role: "something"
+        });
 
-        for (const testCase of testCases) {
-            const response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, testCase);
-            expect(response.status).toBe(400);
-            expect(response.data).toBeDefined();
-            expect(response.data.error).toBeDefined();
-        }
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with no fields", async () => {
+        expect((await utils.signup_user({})).status).toBe(400);
+    });
+});
+
+describe("user signup failure on missing fields", () => {
+    test("should fail signup with missing username", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            password: valid_password,
+            email,
+            role: "USER"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with missing email", async () => {
+        const username = utils.makeUniqueUsername();
+
+        const response = await utils.signup_user({
+            username,
+            password: valid_password,
+            role: "USER"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with missing password", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            email,
+            role: "USER"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+});
+
+describe("user signup failure on invalid username", () => {
+    test("should fail signup with invalid username (less than minimum)", async () => {
+        const username = utils.makeUniqueUsername().substring(0,2);
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: valid_password,
+            email,
+            role: "USER"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with invalid username (more than maximum)", async () => {
+        const username = utils.makeUniqueUsername().repeat(2);
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: valid_password,
+            email,
+            role: "USER"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with invalid username (invalid characters)", async () => {
+        const username = utils.makeUniqueUsername() + "!";
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: valid_password,
+            email,
+            role: "USER"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+});
+
+describe("user signup failure on invalid email", () => {
+    test("should fail signup with invalid email (not an email)", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "!@@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: valid_password,
+            email,
+            role: "USER"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with invalid email (more than maximum)", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username.repeat(150) + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: valid_password,
+            email,
+            role: "USER"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+});
+
+describe("user signup failure on invalid password", () => {
+    test("should fail signup with invalid password (contains white space)", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: valid_password + ' ',
+            email,
+            role: "USER"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with invalid password (less than minimum)", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: "awd",
+            email,
+            role: "USER"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with invalid password (more than maximum)", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: valid_password.repeat(20),
+            email,
+            role: "USER"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with invalid password (no uppercase letter)", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: "password@123",
+            email,
+            role: "USER"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with invalid password (no lowercase letter)", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: "PASSWORD@123",
+            email,
+            role: "USER"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with invalid password (no number)", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: "Passwordawd@@",
+            email,
+            role: "USER"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with invalid password (no special character)", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: "Password123",
+            email,
+            role: "USER"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with invalid password (if it contains control characters)", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: `GoodPass1!\x01`,
+            email,
+            role: "USER"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+});
+
+describe("admin signup failure on missing fields", () => {
+    test("should fail signup with missing username", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            password: valid_password,
+            email,
+            role: "ADMIN"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with missing email", async () => {
+        const username = utils.makeUniqueUsername();
+
+        const response = await utils.signup_user({
+            username,
+            password: valid_password,
+            role: "ADMIN"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with missing password", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            email,
+            role: "ADMIN"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+});
+
+describe("admin signup failure on invalid username", () => {
+    test("should fail signup with invalid username (less than minimum)", async () => {
+        const username = utils.makeUniqueUsername().substring(0,2);
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: valid_password,
+            email,
+            role: "ADMIN"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with invalid username (more than maximum)", async () => {
+        const username = utils.makeUniqueUsername().repeat(2);
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: valid_password,
+            email,
+            role: "ADMIN"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with invalid username (invalid characters)", async () => {
+        const username = utils.makeUniqueUsername() + "!";
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: valid_password,
+            email,
+            role: "ADMIN"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+});
+
+describe("admin signup failure on invalid email", () => {
+    test("should fail signup with invalid email (not an email)", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "!@@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: valid_password,
+            email,
+            role: "ADMIN"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with invalid email (more than maximum)", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username.repeat(15) + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: valid_password,
+            email,
+            role: "ADMIN"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+});
+
+describe("admin signup failure on invalid password", () => {
+    test("should fail signup with invalid password (contains white space)", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: valid_password + ' ',
+            email,
+            role: "ADMIN"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with invalid password (less than minimum)", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: "awd",
+            email,
+            role: "ADMIN"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with invalid password (more than maximum)", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: valid_password.repeat(20),
+            email,
+            role: "ADMIN"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with invalid password (no uppercase letter)", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: "password@123",
+            email,
+            role: "ADMIN"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with invalid password (no lowercase letter)", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: "PASSWORD@123",
+            email,
+            role: "ADMIN"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with invalid password (no number)", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: "Passwordawd@@",
+            email,
+            role: "ADMIN"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with invalid password (no special character)", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: "Password123",
+            email,
+            role: "ADMIN"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
+    });
+
+    test("should fail signup with invalid password (if it contains control characters)", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        const response = await utils.signup_user({
+            username,
+            password: `GoodPass1!\x01`,
+            email,
+            role: "ADMIN"
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.data).toBeDefined();
+        expect(response.data.error).toBeDefined();
+        expect(response.data.details).toBeDefined();
     });
 });
