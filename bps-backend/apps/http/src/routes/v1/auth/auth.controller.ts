@@ -36,7 +36,11 @@ export const signup_post = async (req: Request, res: Response, next: NextFunctio
 
     try {
         // Extremly slow CPU intensive hashing algo (for low entropy guys)
-        const hashed_password = await argon2.hash(parsedBody.data.password);
+        const hashed_password = await argon2.hash(parsedBody.data.password, {
+            timeCost: 2, 
+            memoryCost: 2 ** 14,
+            parallelism: 1,
+        });
 
         const user = await client.user.create({
             data: {
