@@ -107,7 +107,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
         // Set the refresh token as an HttpOnly cookie
         // close the connection as soon as possible
         res.status(200)
-        .cookie('refresh_token', refresh_token, {httpOnly: true, secure: false, sameSite: 'none', path: '/api/v1/auth',})
+        .cookie('refresh_token', refresh_token, {httpOnly: true, secure: false, sameSite: 'lax', path: '/api/v1/auth',})
         .json({ id: user.id, role: user.role, access_token: accessToken, expires_in: expires_in})
         .end();
 
@@ -179,19 +179,19 @@ export const refresh_post = async (req: Request, res: Response, next: NextFuncti
             select: { userId: true, revoked_at: true, user: { select: { id: true, email: true, role: true } } },
         });
 
-        if (row && row.userId === decodedRefresh.userId && !row.revoked_at) {
-            const expires_in = 15 * 60; // 15 minutes in seconds
+        if (!(row && row.userId === decodedRefresh.userId && !row.revoked_at)) return res.status(401).end();
 
-            const accessToken = jwt.sign(
-                { userId: row.user.id, email: row.user.email, role: row.user.role },
-                JWT_SECRET,
-                { expiresIn: expires_in }
-            );
+        const expires_in = 15 * 60; // 15 minutes in seconds
 
-            return res.status(200).json({ access_token: accessToken, expires_in: expires_in }).end();
-        }
+        const accessToken = jwt.sign(
+            { userId: row.user.id, email: row.user.email, role: row.user.role },
+            JWT_SECRET,
+            { expiresIn: expires_in }
+        );
+
+        return res.status(200).json({ access_token: accessToken, expires_in: expires_in }).end();
     }
-    finally {
+    catch {
         return res.status(401).end();
     };
 };
