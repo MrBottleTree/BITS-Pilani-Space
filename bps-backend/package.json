@@ -10,11 +10,20 @@
   },
   "devDependencies": {
     "prettier": "^3.7.4",
-    "turbo": "^2.7.1",
+    "turbo": "^2.7.2",
     "typescript": "5.9.2"
   },
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@10.26.2",
   "engines": {
     "node": ">=18"
+  },
+  "pnpm": {
+    "trustedDependencies": [
+      "turbo",
+      "esbuild",
+      "prisma",
+      "@prisma/engines",
+      "argon2"
+    ]
   }
 }

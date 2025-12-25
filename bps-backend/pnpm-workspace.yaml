@@ -1,3 +1,9 @@
 packages:
-  - "apps/*"
-  - "packages/*"
+  - apps/*
+  - packages/*
+
+onlyBuiltDependencies:
+  - '@prisma/engines'
+  - argon2
+  - esbuild
+  - prisma
