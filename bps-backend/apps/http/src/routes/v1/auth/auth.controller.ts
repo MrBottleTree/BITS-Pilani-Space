@@ -107,7 +107,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
         // Set the refresh token as an HttpOnly cookie
         // close the connection as soon as possible
         res.status(200)
-        .cookie('refresh_token', refresh_token, {httpOnly: true, secure: true, sameSite: 'none', path: '/api/v1/auth',})
+        .cookie('refresh_token', refresh_token, {httpOnly: true, secure: false, sameSite: 'none', path: '/api/v1/auth',})
         .json({ id: user.id, role: user.role, access_token: accessToken, expires_in: expires_in})
         .end();
 
