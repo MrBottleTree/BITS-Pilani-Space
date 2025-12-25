@@ -10,4 +10,6 @@ app.use(cookieParser());
 
 app.use("/api/v1", v1_router);
 
-app.listen(process.env.PORT || 3000);
+app.listen(process.env.PORT || 3000, "0.0.0.0", () => {
+  console.log(`Listening on 0.0.0.0:${process.env.PORT || 3000}`);
+});
