@@ -32,5 +32,5 @@ start: ## start = start containers using existing DB volume
 	$(COMPOSE) up --build -d postgres http
 
 .PHONY: test
-test: run ## test = fresh run then run tests
-	cd tests && npm install && npm run test
+test: run ## test = fresh run then run tests and then return to previous directory
+	cd tests && npm install && npm run test && cd ..
