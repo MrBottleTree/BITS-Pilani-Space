@@ -1,17 +1,10 @@
-const axios = require("axios");
-
-axios.defaults.validateStatus = () => true;
-
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3000";
-if (!BACKEND_URL) { // no backend URL, no tests
-    throw new Error("BACKEND_URL environment variable is not defined");
-}
+const utils = require("../utils/testUtils");
+const valid_password = "Password@123";
 
 describe("refresh success", () => {
-    const username = "test_user_signin" + Date.now() + "_" + process.hrtime.bigint();
-    const password = "Password@123";
+    const username = utils.makeUniqueUsername();
     
-    const a_username = "admin" + username;
+    const a_username = utils.makeUniqueUsername();
 
     const user_email = username + "@example.com";
     const admin_email = a_username + "@example.com";
@@ -24,11 +17,11 @@ describe("refresh success", () => {
 
     beforeAll( async () => {
         // Signup the user
-        const user_signup_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const user_signup_resp = await utils.signup_user({
             username,
-            password,
+            password: valid_password,
             email: user_email,
-            role: "user"
+            role: "USER"
         });
 
         expect(user_signup_resp.status).toBe(201);
@@ -36,11 +29,11 @@ describe("refresh success", () => {
         expect(user_signup_resp.data.id).toBeDefined();
 
         // Signup the admin
-        const admin_signup_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const admin_signup_resp = await utils.signup_user({
             username: a_username,
-            password,
+            password: valid_password,
             email: admin_email,
-            role: "admin"
+            role: "ADMIN"
         });
 
         expect(admin_signup_resp.status).toBe(201);
@@ -48,16 +41,16 @@ describe("refresh success", () => {
         expect(admin_signup_resp.data.id).toBeDefined();
 
         // Signin the user
-        const user_signin_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, {
+        const user_signin_resp = await utils.signin_user({
             identifier: username,
-            password
+            password: valid_password
         });
 
         expect(user_signin_resp.status).toBe(200);
         expect(user_signin_resp.data).toBeDefined();
 
         expect(user_signin_resp.data.id).toBeDefined();
-        expect(user_signin_resp.data.type).toBe("USER");
+        expect(user_signin_resp.data.role).toBe("USER");
         expect(user_signin_resp.data.access_token).toBeDefined();
         expect(user_signin_resp.data.expires_in).toBeDefined();
 
@@ -74,16 +67,16 @@ describe("refresh success", () => {
         expect(user_refresh_token).toBeDefined();
 
         // Signin the admin
-        const admin_signin_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, {
+        const admin_signin_resp = await utils.signin_user({
             identifier: a_username,
-            password
+            password: valid_password
         });
 
         expect(admin_signin_resp.status).toBe(200);
         expect(admin_signin_resp.data).toBeDefined();
 
         expect(admin_signin_resp.data.id).toBeDefined();
-        expect(admin_signin_resp.data.type).toBe("ADMIN");
+        expect(admin_signin_resp.data.role).toBe("ADMIN");
         expect(admin_signin_resp.data.access_token).toBeDefined();
         expect(admin_signin_resp.data.expires_in).toBeDefined();
 
@@ -103,11 +96,7 @@ describe("refresh success", () => {
 
     test("user should be able to refresh token", async () => {
         // request new access token using refresh token
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/refresh`, {}, {
-            headers: {
-                Cookie: `refresh_token=${user_refresh_token}`
-            }
-        });
+        const response = await utils.refresh_token(user_refresh_token);
 
         expect(response.status).toBe(200);
         expect(response.data).toBeDefined();
@@ -116,11 +105,7 @@ describe("refresh success", () => {
     });
 
     test("admin should be able to refresh token", async () => {
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/refresh`, {}, {
-            headers: {
-                Cookie: `refresh_token=${admin_refresh_token}`
-            }
-        });
+        const response = await utils.refresh_token(admin_refresh_token);
 
         expect(response.status).toBe(200);
         expect(response.data).toBeDefined();
@@ -130,10 +115,9 @@ describe("refresh success", () => {
 });
 
 describe("refresh failure", () => {
-    const username = "test_user_signin" + Date.now() + "_" + process.hrtime.bigint();
-    const password = "Password@123";
+    const username = utils.makeUniqueUsername();
     
-    const a_username = "admin" + username;
+    const a_username = utils.makeUniqueUsername();
 
     const user_email = username + "@example.com";
     const admin_email = a_username + "@example.com";
@@ -146,11 +130,11 @@ describe("refresh failure", () => {
 
     beforeAll( async () => {
         // Signup the user
-        const user_signup_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const user_signup_resp = await utils.signup_user({
             username,
-            password,
+            password: valid_password,
             email: user_email,
-            role: "user"
+            role: "USER"
         });
 
         expect(user_signup_resp.status).toBe(201);
@@ -158,11 +142,11 @@ describe("refresh failure", () => {
         expect(user_signup_resp.data.id).toBeDefined();
 
         // Signup the admin
-        const admin_signup_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
+        const admin_signup_resp = await utils.signup_user({
             username: a_username,
-            password,
+            password: valid_password,
             email: admin_email,
-            role: "admin"
+            role: "ADMIN"
         });
 
         expect(admin_signup_resp.status).toBe(201);
@@ -170,16 +154,16 @@ describe("refresh failure", () => {
         expect(admin_signup_resp.data.id).toBeDefined();
 
         // Signin the user
-        const user_signin_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, {
+        const user_signin_resp = await utils.signin_user({
             identifier: username,
-            password
+            password: valid_password
         });
 
         expect(user_signin_resp.status).toBe(200);
         expect(user_signin_resp.data).toBeDefined();
 
         expect(user_signin_resp.data.id).toBeDefined();
-        expect(user_signin_resp.data.type).toBe("USER");
+        expect(user_signin_resp.data.role).toBe("USER");
         expect(user_signin_resp.data.access_token).toBeDefined();
         expect(user_signin_resp.data.expires_in).toBeDefined();
 
@@ -196,16 +180,16 @@ describe("refresh failure", () => {
         expect(user_refresh_token).toBeDefined();
 
         // Signin the admin
-        const admin_signin_resp = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, {
+        const admin_signin_resp = await utils.signin_user({
             identifier: a_username,
-            password
+            password: valid_password
         });
 
         expect(admin_signin_resp.status).toBe(200);
         expect(admin_signin_resp.data).toBeDefined();
 
         expect(admin_signin_resp.data.id).toBeDefined();
-        expect(admin_signin_resp.data.type).toBe("ADMIN");
+        expect(admin_signin_resp.data.role).toBe("ADMIN");
         expect(admin_signin_resp.data.access_token).toBeDefined();
         expect(admin_signin_resp.data.expires_in).toBeDefined();
 
@@ -224,16 +208,12 @@ describe("refresh failure", () => {
     });
 
     test("failure on missing refresh token", async () => {
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/refresh`, {});
+        const response = await utils.refresh_token();
         expect(response.status).toBe(400);
     });
 
     test("failure on invalid refresh token", async () => {
-        const response = await axios.post(`${BACKEND_URL}/api/v1/auth/refresh`, {}, {
-            headers: {
-                Cookie: `refresh_token=invalidtoken`
-            }
-        });
+        const response = await utils.refresh_token('invalid token');
         expect(response.status).toBe(401);
     });
 });

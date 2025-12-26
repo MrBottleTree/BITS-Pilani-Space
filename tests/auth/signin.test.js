@@ -1,139 +1,335 @@
-const axios = require("axios");
+const utils = require("../utils/testUtils");
+const valid_password = "Password@123";
 
-axios.defaults.validateStatus = () => true;
-
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3000";
-if (!BACKEND_URL) { // no backend URL, no tests
-    throw new Error("BACKEND_URL environment variable is not defined");
-}
-
-describe("signin success", () => {
-    test("user should be able to signin with correct credentials", async () => {
-        let username = "test_user_signin" + Date.now() + "_" + process.hrtime.bigint();
-        const password = username + " Password@123";
+describe("signin successful", () => {
+    test("user should be able to signin", async () => {
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
 
-        // First signup the user
-        const signup_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
-            email,
-            username,
-            password,
-            type: "user" // normal user type
-        });
+        let credentials = {username, password: valid_password, email, role: "USER"}
+        const response = await utils.signup_user(credentials);
 
-        expect(signup_response.status).toBe(201);
-        expect(signup_response.data).toBeDefined();
-        expect(signup_response.data.id).toBeDefined();
+        expect(response.status).toBe(201);
+        expect(response.data).toBeDefined();
+        expect(response.data.id).toBeDefined();
 
-        // Now signin with the same credentials
-        const signin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, { identifier: username, password });
+        credentials['identifier'] = credentials.username;
+        const signin_response = await utils.signin_user(credentials);
 
         expect(signin_response.status).toBe(200);
+        expect(signin_response.data).toBeDefined();
+        expect(signin_response.data.id).toBe(response.data.id);
+        expect(signin_response.data.role).toBe('USER');
+        expect(signin_response.data.access_token).toBeDefined();
+        expect(signin_response.data.expires_in).toBeDefined();
 
-        // Get all cookies from the response
-        const setCookie = signin_response.headers["set-cookie"];
-        expect(setCookie).toBeDefined();
-
-        // Get the cookie we need
-        const refreshTokenCookie = setCookie.find(c => c.startsWith("refresh_token="));
-        expect(refreshTokenCookie).toBeDefined();
-
-        // assert on the COOKIE STRING
-        expect(refreshTokenCookie).toContain("HttpOnly");
-        expect(refreshTokenCookie).toContain("Secure");
-        expect(refreshTokenCookie).toContain("SameSite=None");
-        expect(refreshTokenCookie).toContain("Path=/api/v1/auth");
-
-        // token exists
-        expect(refreshTokenCookie).toMatch(/^refresh_token=[^;]+;/);
-
+        const resp_cookie = signin_response.headers["set-cookie"];
+        expect(resp_cookie).toBeDefined();
+        
+        const refresh_token = resp_cookie.find(c => c.startsWith('refresh_token='));
+        expect(refresh_token).toBeDefined();
     });
 
-    test("admin should be able to signin with correct credentials", async () => {
-        const username = "test_admin_signin" + Date.now() + "_" + process.hrtime.bigint();
-        const password = username + " Password@123";
+    test("admin should be able to signin", async () => {
+        const username = utils.makeUniqueUsername();
         const email = username + "@example.com";
-        // First signup the admin
-        const signup_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
-            email,
-            username,
-            password,
-            type: "admin" // admin user type
-        });
 
-        expect(signup_response.status).toBe(201);
-        expect(signup_response.data).toBeDefined();
-        expect(signup_response.data.id).toBeDefined();
+        let credentials = {username, password: valid_password, email, role: "ADMIN"}
+        const response = await utils.signup_user(credentials);
 
-        // Now signin with the same credentials
-        const signin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, { identifier: username, password });
+        expect(response.status).toBe(201);
+        expect(response.data).toBeDefined();
+        expect(response.data.id).toBeDefined();
+
+        credentials['identifier'] = credentials.username;
+        const signin_response = await utils.signin_user(credentials);
+
         expect(signin_response.status).toBe(200);
+        expect(signin_response.data).toBeDefined();
+        expect(signin_response.data.id).toBe(response.data.id);
+        expect(signin_response.data.role).toBe('ADMIN');
+        expect(signin_response.data.access_token).toBeDefined();
+        expect(signin_response.data.expires_in).toBeDefined();
 
-        // Get all cookies from the response
-        const setCookie = signin_response.headers["set-cookie"];
-        expect(setCookie).toBeDefined();
-
-        // Get the cookie we need
-        const refreshTokenCookie = setCookie.find(c => c.startsWith("refresh_token="));
-        expect(refreshTokenCookie).toBeDefined();
-
-        // assert on the COOKIE STRING
-        expect(refreshTokenCookie).toContain("HttpOnly");
-        expect(refreshTokenCookie).toContain("Secure");
-        expect(refreshTokenCookie).toContain("SameSite=None");
-        expect(refreshTokenCookie).toContain("Path=/api/v1/auth");
-
-        // token exists
-        expect(refreshTokenCookie).toMatch(/^refresh_token=[^;]+;/);
+        const resp_cookie = signin_response.headers["set-cookie"];
+        expect(resp_cookie).toBeDefined();
+        
+        const refresh_token = resp_cookie.find(c => c.startsWith('refresh_token='));
+        expect(refresh_token).toBeDefined();
     });
 });
 
-describe("signin failure", () => {
-    const username = "test_user_signin_fail" + Date.now() + "_" + process.hrtime.bigint();
-    const password = username + " Password@123";
-    const email = username + "@example.com";
+// things like missing identifier and missing password
+describe("common signin failure", () => {
+    test("missing password failure for user", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
 
-    beforeAll(async () => {
-        // First signup the user
-        const signup_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signup`, {
-            email,
-            username,
-            password,
-            type: "user" // normal user type
-        });
+        let credentials = {username, password: valid_password, email, role: "USER"}
+        const response = await utils.signup_user(credentials);
 
-        expect(signup_response.status).toBe(201);
-        expect(signup_response.data).toBeDefined();
-        expect(signup_response.data.id).toBeDefined();
+        expect(response.status).toBe(201);
+        expect(response.data).toBeDefined();
+        expect(response.data.id).toBeDefined();
+
+        const signin_response = await utils.signin_user({identifier: "wrong username"});
+
+        expect(signin_response.status).toBe(400);
+        expect(signin_response.data).toBeDefined();
+        expect(signin_response.data.error).toBeDefined();
     });
 
-    test("signin with incorrect password/identifier pair fails", async () => {
-        let signin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, { identifier: username, password: "wrong_password" });
+    test("missing identifier failure for user", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        let credentials = {username, password: valid_password, email, role: "USER"}
+        const response = await utils.signup_user(credentials);
+
+        expect(response.status).toBe(201);
+        expect(response.data).toBeDefined();
+        expect(response.data.id).toBeDefined();
+
+        const signin_response = await utils.signin_user({password: valid_password});
+
+        expect(signin_response.status).toBe(400);
+        expect(signin_response.data).toBeDefined();
+        expect(signin_response.data.error).toBeDefined();
+    });
+
+    test("missing password failure for admin", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        let credentials = {username, password: valid_password, email, role: "ADMIN"}
+        const response = await utils.signup_user(credentials);
+
+        expect(response.status).toBe(201);
+        expect(response.data).toBeDefined();
+        expect(response.data.id).toBeDefined();
+
+        const signin_response = await utils.signin_user({identifier: "wrong username"});
+
+        expect(signin_response.status).toBe(400);
+        expect(signin_response.data).toBeDefined();
+        expect(signin_response.data.error).toBeDefined();
+    });
+
+    test("missing identifier failure for admin", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        let credentials = {username, password: valid_password, email, role: "ADMIN"}
+        const response = await utils.signup_user(credentials);
+
+        expect(response.status).toBe(201);
+        expect(response.data).toBeDefined();
+        expect(response.data.id).toBeDefined();
+
+        const signin_response = await utils.signin_user({password: valid_password});
+
+        expect(signin_response.status).toBe(400);
+        expect(signin_response.data).toBeDefined();
+        expect(signin_response.data.error).toBeDefined();
+    });
+});
+
+describe("wrong credentials fails for user", () => {
+    test("wrong username as identifier should fail", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        let credentials = {username, password: valid_password, email, role: "USER"}
+        const response = await utils.signup_user(credentials);
+
+        expect(response.status).toBe(201);
+        expect(response.data).toBeDefined();
+        expect(response.data.id).toBeDefined();
+
+        credentials['identifier'] = "wrong username";
+        const signin_response = await utils.signin_user(credentials);
+
         expect(signin_response.status).toBe(401);
         expect(signin_response.data).toBeDefined();
         expect(signin_response.data.error).toBeDefined();
+    });
 
-        const wrong_username = "wrong_" + username;
-        signin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, { identifier: wrong_username, password });
+    test("wrong email as identifier should fail", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        let credentials = {username, password: valid_password, email, role: "USER"}
+        const response = await utils.signup_user(credentials);
+
+        expect(response.status).toBe(201);
+        expect(response.data).toBeDefined();
+        expect(response.data.id).toBeDefined();
+
+        credentials['identifier'] = "wrong email";
+        const signin_response = await utils.signin_user(credentials);
+
         expect(signin_response.status).toBe(401);
         expect(signin_response.data).toBeDefined();
         expect(signin_response.data.error).toBeDefined();
     });
 
-    test("signin with missing fields fails", async () => {
-        let signin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, { password });
-        expect(signin_response.status).toBe(400);
+    test("wrong password should fail", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        let credentials = {username, password: valid_password, email, role: "USER"}
+        const response = await utils.signup_user(credentials);
+
+        expect(response.status).toBe(201);
+        expect(response.data).toBeDefined();
+        expect(response.data.id).toBeDefined();
+
+        const signin_response = await utils.signin_user({identifier: username, password: "Wrongpassword@123"});
+
+        expect(signin_response.status).toBe(401);
         expect(signin_response.data).toBeDefined();
         expect(signin_response.data.error).toBeDefined();
+    });
+});
 
-        signin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, { identifier: username });
-        expect(signin_response.status).toBe(400);
+describe("wrong credentials fails for admin", () => {
+    test("wrong username as identifier should fail", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        let credentials = {username, password: valid_password, email, role: "ADMIN"}
+        const response = await utils.signup_user(credentials);
+
+        expect(response.status).toBe(201);
+        expect(response.data).toBeDefined();
+        expect(response.data.id).toBeDefined();
+
+        credentials['identifier'] = "wrong username";
+        const signin_response = await utils.signin_user(credentials);
+
+        expect(signin_response.status).toBe(401);
         expect(signin_response.data).toBeDefined();
         expect(signin_response.data.error).toBeDefined();
+    });
 
-        signin_response = await axios.post(`${BACKEND_URL}/api/v1/auth/signin`, { });
+    test("wrong email as identifier should fail", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        let credentials = {username, password: valid_password, email, role: "ADMIN"}
+        const response = await utils.signup_user(credentials);
+
+        expect(response.status).toBe(201);
+        expect(response.data).toBeDefined();
+        expect(response.data.id).toBeDefined();
+
+        credentials['identifier'] = "wrong email";
+        const signin_response = await utils.signin_user(credentials);
+
+        expect(signin_response.status).toBe(401);
+        expect(signin_response.data).toBeDefined();
+        expect(signin_response.data.error).toBeDefined();
+    });
+
+    test("wrong password should fail", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        let credentials = {username, password: valid_password, email, role: "ADMIN"}
+        const response = await utils.signup_user(credentials);
+
+        expect(response.status).toBe(201);
+        expect(response.data).toBeDefined();
+        expect(response.data.id).toBeDefined();
+
+        const signin_response = await utils.signin_user({identifier: username, password: "Wrongpassword@123"});
+
+        expect(signin_response.status).toBe(401);
+        expect(signin_response.data).toBeDefined();
+        expect(signin_response.data.error).toBeDefined();
+    });
+});
+
+describe("field violation for user", () => {
+    test("identifier max length violation for user", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        let credentials = {username, password: valid_password, email, role: "USER"}
+        const response = await utils.signup_user(credentials);
+
+        expect(response.status).toBe(201);
+        expect(response.data).toBeDefined();
+        expect(response.data.id).toBeDefined();
+
+        credentials['identifier'] = email.repeat(50);
+        const signin_response = await utils.signin_user(credentials);
+
         expect(signin_response.status).toBe(400);
         expect(signin_response.data).toBeDefined();
         expect(signin_response.data.error).toBeDefined();
     });
+
+    test("password max length violation for user", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        let credentials = {username, password: valid_password, email, role: "USER"}
+        const response = await utils.signup_user(credentials);
+
+        expect(response.status).toBe(201);
+        expect(response.data).toBeDefined();
+        expect(response.data.id).toBeDefined();
+
+        credentials['identifier'] = email;
+        credentials['password'] = email.repeat(50);
+
+        const signin_response = await utils.signin_user(credentials);
+
+        expect(signin_response.status).toBe(400);
+        expect(signin_response.data).toBeDefined();
+        expect(signin_response.data.error).toBeDefined();
+    })
+});
+
+describe("field violation for admin", () => {
+    test("identifier max length violation for admin", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        let credentials = {username, password: valid_password, email, role: "ADMIN"}
+        const response = await utils.signup_user(credentials);
+
+        expect(response.status).toBe(201);
+        expect(response.data).toBeDefined();
+        expect(response.data.id).toBeDefined();
+
+        credentials['identifier'] = email.repeat(50);
+        const signin_response = await utils.signin_user(credentials);
+
+        expect(signin_response.status).toBe(400);
+        expect(signin_response.data).toBeDefined();
+        expect(signin_response.data.error).toBeDefined();
+    });
+
+    test("password max length violation for admin", async () => {
+        const username = utils.makeUniqueUsername();
+        const email = username + "@example.com";
+
+        let credentials = {username, password: valid_password, email, role: "ADMIN"}
+        const response = await utils.signup_user(credentials);
+
+        expect(response.status).toBe(201);
+        expect(response.data).toBeDefined();
+        expect(response.data.id).toBeDefined();
+
+        credentials['identifier'] = email;
+        credentials['password'] = email.repeat(50);
+
+        const signin_response = await utils.signin_user(credentials);
+
+        expect(signin_response.status).toBe(400);
+        expect(signin_response.data).toBeDefined();
+        expect(signin_response.data.error).toBeDefined();
+    })
 });

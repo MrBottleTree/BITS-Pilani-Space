@@ -4,7 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "stress": "k6 run tests/stress-auth-lan.k6.js",
+
+    "stress:debug": "k6 run -e VUS=1 -e DURATION=20s tests/stress-auth-lan.k6.js",
+
+    "stress:50": "k6 run -e VUS=50 -e DURATION=2m tests/stress-auth-lan.k6.js",
+    "stress:100": "k6 run -e VUS=100 -e DURATION=2m tests/stress-auth-lan.k6.js",
+    "stress:200": "k6 run -e VUS=200 -e DURATION=3m tests/stress-auth-lan.k6.js",
+
+    "stress:soak": "k6 run -e VUS=40 -e DURATION=30m tests/stress-auth-lan.k6.js"
+
   },
   "keywords": [],
   "author": "",
