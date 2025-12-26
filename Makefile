@@ -16,8 +16,7 @@ help: ## Show this help message
 # To use help system for a command have to have <command>: ## <description> format
 
 .PHONY: run
-run: ## run = delete everything + start fresh + migrate
-	delete start
+run: delete start ## run = delete everything + start fresh + migrate
 	$(COMPOSE) --profile tools run --rm migrate
 
 .PHONY: delete
@@ -33,6 +32,5 @@ start: ## start = start containers using existing DB volume
 	$(COMPOSE) up --build -d postgres http
 
 .PHONY: test
-test: ## test = fresh run then run tests
-	run
+test: run ## test = fresh run then run tests
 	cd tests && npm install && npm run test
