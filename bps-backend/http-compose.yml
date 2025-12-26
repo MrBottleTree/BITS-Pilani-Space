@@ -1,61 +1,118 @@
+# Docker Compose file for BPS backend with HTTP service and PostgreSQL database
+# version: ???  - Version not specified, defaults to latest version supported by Docker Compose
 services:
+# PostgreSQL database service
   postgres:
     image: postgres:16
-    restart: unless-stopped
-    environment:
+    restart: unless-stopped  # Unless manually stopped last time, restart the container on every boot
+    environment:  # Environment variables for PostgreSQL configuration
       POSTGRES_USER: bps
-      POSTGRES_PASSWORD: lol
+      POSTGRES_PASSWORD: lol  # Actual password in .env file or secret management system. Use ${POSTGRES_PASSWORD} for security in production.
       POSTGRES_DB: bps_db
     ports:
-      - "5432:5432"
+      - "5432:5432"  # Port mapping for PostgreSQL, <host_port>:<container_port>
+      # host_port: The port on the host machine, the actual port where requests are sent and recieved.
+      # container_port: The port inside the container where PostgreSQL listens
     volumes:
+      # Volume mapping for PostgreSQL data persistence
+      # bps_pgdata: Named volume on the host machine
+      # /var/lib/postgresql/data: Directory inside the container where PostgreSQL stores data
       - bps_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bps -d bps_db"]
+      # Health check configuration to monitor PostgreSQL service status
+
+      # Run the test through a shell command in container
+      # pg_isready: Utility to check the connection status of PostgreSQL (in-built)
+      # -U bps: Connect as user 'bps'
+      # -d bps_db: Check the database 'bps_db'
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+
+      # interval: Time between each health check attempt
+      # timeout: Maximum time to wait for a response before considering the check failed
+      # retries: Number of consecutive failures before marking the service as unhealthy (i.e. 30 intervals of 2s = 60s total)
       interval: 2s
-      timeout: 2s
+      timeout: 2s  # (Must be between 0s and time interval)
       retries: 30
 
   http:
+  # HTTP service for BPS backend
     build:
+    # Build configuration for the HTTP service
+    # context: Build context directory (current directory)
+    # dockerfile: Path to the Dockerfile for building the HTTP service image
       context: .
       dockerfile: apps/http/Dockerfile
     depends_on:
+    # Dependency on PostgreSQL service with health check condition (healthcheck must pass before starting)
       postgres:
         condition: service_healthy
     ports:
+    # Port mapping for HTTP service, <host_port>:<container_port>
       - "3000:3000"
     volumes:
+    # Volume mappings for code sharing and node_modules persistence
+    # Using anonymous volumes which are created by Docker to persist node_modules directories. (Be careful to manage these volumes properly to avoid disk space issues)
       - .:/repo
       - /repo/node_modules
       - /repo/apps/http/node_modules
-    environment:
+    environment:  # Environment variables for the HTTP service
       NODE_ENV: development
       CI: "true"
       DATABASE_URL: postgres://bps:lol@postgres:5432/bps_db
+    
+    # Command to run inside the HTTP service container
+    # pnpm install: Install project dependencies
+    # pnpm -C packages/db exec prisma generate: Generate Prisma client in the db package
+    # pnpm -C apps/http run dev: Start the HTTP service in development mode
     command: sh -lc "pnpm install && pnpm -C packages/db exec prisma generate && pnpm -C apps/http run dev"
     healthcheck:
+      # Health check configuration to monitor HTTP service status
+      # Run the test through a shell command in container
+      # wget -qO- means to fetch the URL quietly and output to stdout
+      # http://127.0.0.1:3000/api/v1/healthz: URL to check the health endpoint of the HTTP service
+      # redirect output to /dev/null and check exit status
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/v1/healthz >/dev/null 2>&1 || exit 1"]
+
+      # interval: Time between each health check attempt
+      # timeout: Maximum time to wait for a response before considering the check failed
+      # retries: Number of consecutive failures before marking the service as unhealthy (i.e. 120s total)
       interval: 2s
       timeout: 2s
       retries: 60
 
   migrate:
+  # Database migration service for BPS backend
     build:
+    # Build configuration for the migration service
+    # context: Build context directory (current directory)
+    # dockerfile: Path to the Dockerfile for building the migration service image
       context: .
       dockerfile: apps/http/Dockerfile
     depends_on:
+    # Dependency on PostgreSQL service with health check condition (healthcheck must pass before starting)
       postgres:
         condition: service_healthy
     volumes:
+    # Volume mappings for code sharing and node_modules persistence
+    # Using anonymous volumes which are created by Docker to persist node_modules directories. (Be careful to manage these volumes properly to avoid disk space issues)
       - .:/repo
       - /repo/node_modules
+    
+    # working_dir: Set working directory inside the container to /repo/packages/db, this is where the Prisma schema is located
     working_dir: /repo/packages/db
-    environment:
+    environment:  # Environment variables for the migration service
       CI: "true"
       DATABASE_URL: postgres://bps:lol@postgres:5432/bps_db
+    
+    # Command to run inside the migration service container
+    # pnpm install: Install project dependencies
+    # npx prisma generate: Generate Prisma client
+    # npx prisma migrate dev: Apply database migrations in development mode
     command: sh -lc "pnpm install && npx prisma generate && npx prisma migrate dev"
+
+    # This service is only run when explicitly invoked using the "tools" profile. (Check MakeFile for usage)
     profiles: ["tools"]
 
+# Create named volumes for PostgreSQL data persistence
 volumes:
   bps_pgdata:
