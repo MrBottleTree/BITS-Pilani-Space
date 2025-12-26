@@ -20,15 +20,19 @@ run: ## run = delete everything + start fresh + migrate
 	delete start
 	$(COMPOSE) --profile tools run --rm migrate
 
+.PHONY: delete
 delete: ## delete = stop + remove containers + REMOVE DB volume (wipe data)
 	$(COMPOSE) down -v --remove-orphans
 
+.PHONY: stop
 stop: ## stop = stop containers but KEEP DB volume
 	$(COMPOSE) stop
 
+.PHONY: start
 start: ## start = start containers using existing DB volume
 	$(COMPOSE) up --build -d postgres http
 
+.PHONY: test
 test: ## test = fresh run then run tests
 	run
 	cd tests && npm install && npm run test
