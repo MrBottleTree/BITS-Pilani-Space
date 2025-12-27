@@ -6,9 +6,8 @@ import crypto from "crypto";
 import { createId } from "@paralleldrive/cuid2";
 import * as Types from "../../../types";
 import dotenv from "dotenv";
+import { JWT_REFRESH_SECRET, JWT_SECRET, HTTP_STATUS } from "../../../config.js";
 
-export const JWT_SECRET = process.env.JWT_SECRET || "jwt_secret_key";
-export const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "jwt_refresh_secret_key";
 
 const REFRESH_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 Days
 const ACCESS_EXPIRY_SEC = 5 * 60; // 5 Minutes
@@ -28,7 +27,7 @@ export const signup_post = async (req: Request, res: Response, next: NextFunctio
     const parsedBody = Types.SignupScheme.safeParse(req.body);
 
     if (!parsedBody.success) {
-        return res.status(400).json({
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
             error: "Invalid signup data",
             details: parsedBody.error.format(),
         }).end();
@@ -52,11 +51,11 @@ export const signup_post = async (req: Request, res: Response, next: NextFunctio
             select: {id: true} // only need ID, not the entire row
         });
 
-        return res.status(201).json({ id: user.id }).end();
+        return res.status(HTTP_STATUS.CREATED).json({ id: user.id }).end();
     }
 
     catch (error: any) {
-        return res.status(409).json({"error": "Email or username already exists", details: error}).end(); // Conflict, probably email or username already exists
+        return res.status(HTTP_STATUS.CONFLICT).json({"error": "Email or username already exists", details: error}).end(); // Conflict, probably email or username already exists
     };
 
 };
@@ -65,7 +64,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
     const parsedBody = Types.SigninScheme.safeParse(req.body);
 
     // not clean data
-    if (!parsedBody.success) return res.status(400).json({error: "Invalid signin data", details: parsedBody.error.format()}).end();
+    if (!parsedBody.success) return res.status(HTTP_STATUS.BAD_REQUEST).json({error: "Invalid signin data", details: parsedBody.error.format()}).end();
     
     const identifier = parsedBody.data.identifier;
     const password = parsedBody.data.password;
@@ -77,13 +76,13 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
         });
 
         // user not there in our db
-        if (!user) return res.status(401).json({ error: "Invalid credentials", details: "User not found in the database" }).end();
+        if (!user) return res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: "Invalid credentials", details: "User not found in the database" }).end();
 
         // Low entropy, hence the argon2
         const passwordValid = await argon2.verify(user.password_hash, password);
 
         // wrong password given by user
-        if (!passwordValid) return res.status(401).json({ error: "Invalid credentials", details: "Password does not match" }).end();
+        if (!passwordValid) return res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: "Invalid credentials", details: "Password does not match" }).end();
 
         // Make ID for refresh token
         const jti = createId();
@@ -116,7 +115,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
         
         return res
             .cookie('refresh_token', refresh_token, COOKIE_OPTS)
-            .status(200)
+            .status(HTTP_STATUS.OK)
             .json({ id: user.id, role: user.role, access_token: access_token, expires_in: ACCESS_EXPIRY_SEC});
     }
     catch (error) { next(error); };
@@ -126,7 +125,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
 export const signout_post = async (req: Request, res: Response, next: NextFunction) => {
     const refresh_token = req.cookies?.refresh_token as string | undefined;
 
-    if (!refresh_token) return res.status(400).end();
+    if (!refresh_token) return res.status(HTTP_STATUS.BAD_REQUEST).end();
 
     try {
         const decodedRefresh = jwt.verify(refresh_token, JWT_REFRESH_SECRET) as { userId: string; jti: string };
@@ -146,17 +145,17 @@ export const signout_post = async (req: Request, res: Response, next: NextFuncti
                 data: { revoked_at: new Date() },
             });
 
-            return res.status(204).end();
+            return res.status(HTTP_STATUS.NO_CONTENT).end();
         }
-        return res.status(401).end();
+        return res.status(HTTP_STATUS.UNAUTHORIZED).end();
     }
-    catch { return res.status(401).end(); };
+    catch { return res.status(HTTP_STATUS.UNAUTHORIZED).end(); };
 };
 
 export const refresh_post = async (req: Request, res: Response, next: NextFunction) => {
     const refresh_token = req.cookies?.refresh_token;
 
-    if (!refresh_token) return res.status(400).end();
+    if (!refresh_token) return res.status(HTTP_STATUS.BAD_REQUEST).end();
 
     try {
         const decodedRefresh = jwt.verify(refresh_token, JWT_REFRESH_SECRET) as { userId: string; jti: string };
@@ -167,14 +166,14 @@ export const refresh_post = async (req: Request, res: Response, next: NextFuncti
             select: { userId: true, revoked_at: true, token_hash: true, user: { select: { id: true, email: true, role: true } } },
         });
 
-        if (!(row && row.userId === decodedRefresh.userId && !row.revoked_at)) return res.status(401).end();
+        if (!(row && row.userId === decodedRefresh.userId && !row.revoked_at)) return res.status(HTTP_STATUS.UNAUTHORIZED).end();
 
         const incomingHash = hashToken(refresh_token);
 
         const isMatch = crypto.timingSafeEqual(Buffer.from(incomingHash), Buffer.from(row.token_hash));
 
         // CAUGHT
-        if (!isMatch) return res.status(401).end();
+        if (!isMatch) return res.status(HTTP_STATUS.UNAUTHORIZED).end();
 
         const access_token = jwt.sign(
             { userId: row.user.id, email: row.user.email, role: row.user.role },
@@ -182,7 +181,7 @@ export const refresh_post = async (req: Request, res: Response, next: NextFuncti
             { expiresIn: ACCESS_EXPIRY_SEC }
         );
 
-        return res.status(200).json({ access_token, expires_in: ACCESS_EXPIRY_SEC }).end();
+        return res.status(HTTP_STATUS.OK).json({ access_token, expires_in: ACCESS_EXPIRY_SEC }).end();
     }
-    catch { return res.status(401).end(); };
+    catch { return res.status(HTTP_STATUS.UNAUTHORIZED).end(); };
 };
