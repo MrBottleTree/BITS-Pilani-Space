@@ -51,6 +51,15 @@ async function delete_user(token, credentials){
     });
 }
 
+async function batch_delete_users(token, payload) {
+    return await axios.delete(`${BACKEND_URL}/api/${API_VERSION}/admin/batch`, {
+        headers: {
+            Authorization: 'Bearer ' + token
+        },
+        data: payload
+    });
+}
+
 module.exports = {
   axios,
   API_VERSION,
@@ -60,5 +69,6 @@ module.exports = {
   signin_user,
   signout_user,
   refresh_token,
-  delete_user
+  delete_user,
+  batch_delete_users
 };
