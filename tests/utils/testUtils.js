@@ -43,10 +43,11 @@ async function refresh_token(refreshToken = ""){
 }
 
 async function delete_user(token, credentials){
-    return await axios.post(`${BACKEND_URL}/api/${API_VERSION}/user/delete`, credentials, {
+    return await axios.delete(`${BACKEND_URL}/api/${API_VERSION}/user/me`, {
         headers: {
             Authorization: 'Bearer ' + token
-        }
+        },
+        data: credentials
     });
 }
 

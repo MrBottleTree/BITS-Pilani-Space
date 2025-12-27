@@ -6,7 +6,7 @@ import crypto from "crypto";
 import * as Types from "../../../types/index.js";
 import { HTTP_STATUS } from "../../../config.js";
 
-export const delete_post = async (req: Request, res: Response, next: NextFunction) => {
+export const delete_user = async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
     Types.SigninScheme
     // Just for safety
