@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from "express";
-import client from "@repo/db/client";
+import { client } from "@repo/db/client";
 import argon2 from "argon2";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { createId } from "@paralleldrive/cuid2";
-import * as Types from "../../../types";
+import * as Types from "../../../types/index.js";
 import dotenv from "dotenv";
 import { JWT_REFRESH_SECRET, JWT_SECRET, HTTP_STATUS } from "../../../config.js";
 
