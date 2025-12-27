@@ -11,7 +11,7 @@ export const user_simple_middleware = (req: Request, res: Response, next: NextFu
 
     if(!parsed_header.success) return res.status(HTTP_STATUS.BAD_REQUEST).json({
         "error": "Bad Request",
-        "details": parsed_header.error.format()
+        "details": parsed_header.error
     });
 
     const auth_token = parsed_header.data.authorization;
