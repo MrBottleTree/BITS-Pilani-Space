@@ -2,11 +2,10 @@ import { Request, Response, NextFunction } from "express";
 import { client } from "@repo/db/client";
 import argon2 from "argon2";
 import jwt from "jsonwebtoken";
-import crypto from "crypto";
 import { createId } from "@paralleldrive/cuid2";
 import * as Types from "../../../types/index.js";
-import dotenv from "dotenv";
 import { JWT_REFRESH_SECRET, JWT_SECRET, HTTP_STATUS } from "../../../config.js";
+import { fastHashToken, fastValidate, get_parsed_error_message } from "../utils/helper.js";
 
 
 const REFRESH_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 Days
@@ -18,18 +17,14 @@ const COOKIE_OPTS = {
     path: '/api/v1/auth' 
 };
 
-function hashToken(token: string): string {
-    return crypto.createHash('sha256').update(token).digest('hex');
-}
-
 export const signup_post = async (req: Request, res: Response, next: NextFunction) => {
     // Clean and get what you need from the input
-    const parsedBody = Types.SignupScheme.safeParse(req.body);
+    const parsedBody = Types.SignupSchema.safeParse(req.body);
 
     if (!parsedBody.success) {
         return res.status(HTTP_STATUS.BAD_REQUEST).json({
             error: "Invalid signup data",
-            details: parsedBody.error.format(),
+            details: get_parsed_error_message(parsedBody)
         }).end();
     }
 
@@ -61,10 +56,10 @@ export const signup_post = async (req: Request, res: Response, next: NextFunctio
 };
 
 export const signin_post = async (req: Request, res: Response, next: NextFunction) => {
-    const parsedBody = Types.SigninScheme.safeParse(req.body);
+    const parsedBody = Types.SigninSchema.safeParse(req.body);
 
     // not clean data
-    if (!parsedBody.success) return res.status(HTTP_STATUS.BAD_REQUEST).json({error: "Invalid signin data", details: parsedBody.error.format()}).end();
+    if (!parsedBody.success) return res.status(HTTP_STATUS.BAD_REQUEST).json({error: "Invalid signin data", details: get_parsed_error_message(parsedBody)}).end();
     
     const identifier = parsedBody.data.identifier;
     const password = parsedBody.data.password;
@@ -94,7 +89,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
         );
 
         // very fast hash since refresh_token is high entropy
-        const token_hash = hashToken(refresh_token);
+        const token_hash = fastHashToken(refresh_token);
 
         const access_token = jwt.sign(
             { userId: user.id, email: user.email, role: user.role },
@@ -168,12 +163,8 @@ export const refresh_post = async (req: Request, res: Response, next: NextFuncti
 
         if (!(row && row.userId === decodedRefresh.userId && !row.revoked_at)) return res.status(HTTP_STATUS.UNAUTHORIZED).end();
 
-        const incomingHash = hashToken(refresh_token);
-
-        const isMatch = crypto.timingSafeEqual(Buffer.from(incomingHash), Buffer.from(row.token_hash));
-
         // CAUGHT
-        if (!isMatch) return res.status(HTTP_STATUS.UNAUTHORIZED).end();
+        if (!fastValidate(refresh_token, row.token_hash)) return res.status(HTTP_STATUS.UNAUTHORIZED).end();
 
         const access_token = jwt.sign(
             { userId: row.user.id, email: row.user.email, role: row.user.role },
