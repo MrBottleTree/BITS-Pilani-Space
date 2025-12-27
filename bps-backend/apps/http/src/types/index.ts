@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const RoleSchema = z.enum(["USER", "ADMIN"]);
 
-export const SignupScheme = z.object({
+export const SignupSchema = z.object({
     username: z
         .string()
         .trim()
@@ -43,7 +43,7 @@ export const SignupScheme = z.object({
     role: RoleSchema
 }).strict();
 
-export const SigninScheme = z.object({
+export const SigninSchema = z.object({
     identifier: z
         .string()
         .trim()
@@ -56,7 +56,7 @@ export const SigninScheme = z.object({
         .max(128, "Password too long"),
 });
 
-export const UserScheme = z.object({
+export const UserSchema = z.object({
     userId: z.string(),
     email: z.email(),
     role: RoleSchema
@@ -67,4 +67,11 @@ export const AuthorizationHeaderSchema = z.object({
     .string()
     .startsWith("Bearer ", { message: "Must be a Bearer token" })
     .transform((val) => val.split(" ")[1]) 
+});
+
+export const BatchUserDeletionSchema = z.object({
+  userIds: z
+    .array(z.string().min(1, "ID cannot be empty"))
+    .min(1, "At least one ID is required")
+    .max(1000, "Cannot delete more than 1000 users at once")
 });
