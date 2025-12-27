@@ -42,6 +42,14 @@ async function refresh_token(refreshToken = ""){
     });
 }
 
+async function delete_user(token, credentials){
+    return await axios.post(`${BACKEND_URL}/api/${API_VERSION}/user/delete`, credentials, {
+        headers: {
+            Authorization: 'Bearer ' + token
+        }
+    });
+}
+
 module.exports = {
   axios,
   API_VERSION,
@@ -51,4 +59,5 @@ module.exports = {
   signin_user,
   signout_user,
   refresh_token,
+  delete_user
 };
