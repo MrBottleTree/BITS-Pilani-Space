@@ -55,3 +55,16 @@ export const SigninScheme = z.object({
         .min(1, "Password is required")
         .max(128, "Password too long"),
 });
+
+export const UserScheme = z.object({
+    userId: z.string(),
+    email: z.email(),
+    role: RoleSchema
+});
+
+export const AuthorizationHeaderSchema = z.object({
+  authorization: z
+    .string()
+    .startsWith("Bearer ", { message: "Must be a Bearer token" })
+    .transform((val) => val.split(" ")[1]) 
+});
