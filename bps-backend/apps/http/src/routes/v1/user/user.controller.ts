@@ -8,9 +8,9 @@ import { HTTP_STATUS } from "../../../config.js";
 
 export const delete_user = async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
-    Types.SigninScheme
+    Types.SigninSchema
     // Just for safety
-    if(!user) return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({"error": "user not defined after parsing through middleware"});
+    if(!user) return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({"error": "user not defined after parsing through middleware"}).end();
 
     // Here onwards i am assuming that the user is properly verified and stuff
     try {
@@ -20,9 +20,9 @@ export const delete_user = async (req: Request, res: Response, next: NextFunctio
             select: { deleted_at: true }
         });
 
-        return res.status(HTTP_STATUS.OK).json({"userId": user.userId, "deleted_at": updated_user.deleted_at});
+        return res.status(HTTP_STATUS.OK).json({"userId": user.userId, "deleted_at": updated_user.deleted_at}).end();
     }
     catch {
-        return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "error in database operation"});
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "error in database operation"}).end();
     }
 };

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import authRouter from "./auth/auth.routes.js";
 import userRouter from "./user/user.routes.js";
+import adminRouter from "./admin/admin.routes.js";
 
 const router = Router();
 
@@ -11,5 +12,6 @@ router.get("/healthz", (req, res) => {
 
 router.use("/auth", authRouter);
 router.use("/user", userRouter);
+router.use("/admin", adminRouter)
 
 export default router;
