@@ -24,3 +24,6 @@ declare global {
         }
     }
 }
+
+export const REQUEST_HANDLED = false;
+export const REQUEST_NOTHANDLED = true;
