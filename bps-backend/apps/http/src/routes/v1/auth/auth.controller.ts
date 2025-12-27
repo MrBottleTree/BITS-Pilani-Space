@@ -71,7 +71,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
 
     try {
         const user = await client.user.findUnique({
-            where: identifier.includes('@') ? { email: identifier } : { username: identifier },
+            where: identifier.includes('@') ? { email: identifier, deleted_at: null } : { username: identifier, deleted_at: null },
             select: { id: true, password_hash: true, email: true, role: true }
         });
 
