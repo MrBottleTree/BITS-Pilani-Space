@@ -24,6 +24,8 @@ model User {
   deleted_at    DateTime?
 
   refreshTokens RefreshToken[]
+
+  @@index([role, deleted_at])
 }
 
 model RefreshToken {
