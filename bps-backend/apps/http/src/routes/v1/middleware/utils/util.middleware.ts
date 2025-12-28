@@ -1,11 +1,9 @@
-import { NextFunction, request, Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import * as Types from "../../../../types/index.js";
-import { HTTP_STATUS, JWT_SECRET } from "../../../../config.js";
+import { HTTP_STATUS, JWT_SECRET, REQUEST_HANDLED, REQUEST_NOTHANDLED } from "../../../../config.js";
 import jwt from "jsonwebtoken";
 import argon2 from "argon2";
-import { REQUEST_HANDLED, REQUEST_NOTHANDLED } from "../../../../config.js";
 import { client } from "@repo/db";
-
 
 export const simple_middleware = (request_role: string) => {
     return (req: Request, res: Response, next: NextFunction) => {
@@ -20,15 +18,13 @@ export const simple_middleware = (request_role: string) => {
         }
 
         const auth_token = parsed_header.data.authorization;
-        if(!auth_token){
+        if(!auth_token) {
             res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "no auth token found"}).end();
             return REQUEST_HANDLED;
-        } 
+        }
 
         try{
             const decoded_auth = jwt.verify(auth_token, JWT_SECRET);
-            
-            // doing some safety checks here itself to remove the complexity from the controller side
             const parsed_auth = Types.UserSchema.safeParse(decoded_auth)
 
             if(!parsed_auth.success) {
@@ -44,8 +40,9 @@ export const simple_middleware = (request_role: string) => {
                 return REQUEST_HANDLED;
             }
 
-
             req.user = parsed_auth.data;
+            
+            next(); 
             return REQUEST_NOTHANDLED;
         }
         catch (error){
@@ -62,7 +59,9 @@ export const simple_middleware = (request_role: string) => {
 export const strong_middleware = (request_role: string) => {
     return async (req: Request, res: Response, next: NextFunction) => {
 
-        if(simple_middleware(request_role)(req, res, next) === REQUEST_HANDLED) return;
+        const dummyNext = () => {}; 
+
+        if(simple_middleware(request_role)(req, res, dummyNext) === REQUEST_HANDLED) return;
 
         const user = req.user;
 
