@@ -2,6 +2,31 @@ import { z } from "zod";
 
 export const RoleSchema = z.enum(["USER", "ADMIN"]);
 
+export const PasswordSchema = z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(128, "Password too long")
+    .superRefine((val, ctx) => {
+        if (/\s/.test(val)) {
+            ctx.addIssue({ code: "custom", message: "Password must not contain whitespace" });
+        }
+        if (/[\x00-\x1F\x7F]/.test(val)) {
+            ctx.addIssue({ code: "custom", message: "Password must not contain control characters" });
+        }
+        if (!/[a-z]/.test(val)) {
+            ctx.addIssue({ code: "custom", message: "Password must contain a lowercase letter" });
+        }
+        if (!/[A-Z]/.test(val)) {
+            ctx.addIssue({ code: "custom", message: "Password must contain an uppercase letter" });
+        }
+        if (!/[0-9]/.test(val)) {
+            ctx.addIssue({ code: "custom", message: "Password must contain a number" });
+        }
+        if (!/[!@#$%^&*(),.?":{}|<>[\]\\\/~`+=_-]/.test(val)) {
+            ctx.addIssue({ code: "custom", message: "Password must contain a special character" });
+        }
+    });
+
 export const SignupSchema = z.object({
     username: z
         .string()
@@ -16,30 +41,7 @@ export const SignupSchema = z.object({
         .max(254, "Email too long")
         .transform(v => v.toLowerCase()),
 
-    password: z
-        .string()
-        .min(8, "Password must be at least 8 characters")
-        .max(128, "Password too long")
-        .superRefine((val, ctx) => {
-            if (/\s/.test(val)) {
-                ctx.addIssue({ code: "custom", message: "Password must not contain whitespace" });
-            }
-            if (/[\x00-\x1F\x7F]/.test(val)) {
-                ctx.addIssue({ code: "custom", message: "Password must not contain control characters" });
-            }
-            if (!/[a-z]/.test(val)) {
-                ctx.addIssue({ code: "custom", message: "Password must contain a lowercase letter" });
-            }
-            if (!/[A-Z]/.test(val)) {
-                ctx.addIssue({ code: "custom", message: "Password must contain an uppercase letter" });
-            }
-            if (!/[0-9]/.test(val)) {
-                ctx.addIssue({ code: "custom", message: "Password must contain a number" });
-            }
-            if (!/[!@#$%^&*(),.?":{}|<>[\]\\\/~`+=_-]/.test(val)) {
-                ctx.addIssue({ code: "custom", message: "Password must contain a special character" });
-            }
-        }),
+    password: PasswordSchema,
     role: RoleSchema
 }).strict();
 
@@ -58,6 +60,7 @@ export const SigninSchema = z.object({
 
 export const UserSchema = z.object({
     userId: z.string(),
+    username: z.string(),
     email: z.email(),
     role: RoleSchema
 });
@@ -75,3 +78,29 @@ export const BatchUserDeletionSchema = z.object({
     .min(1, "At least one ID is required")
     .max(1000, "Cannot delete more than 1000 users at once")
 });
+
+export const UpdateUserSchema = z.object({
+    id: z.string().optional(),
+
+    password: z.string().min(1, { message: "Current password is required" }),
+
+    user: z.object({
+        new_username: z
+            .string()
+            .trim()
+            .min(3, "Username must be at least 3 characters")
+            .max(32, "Username must be at most 32 characters")
+            .regex(/^[a-zA-Z0-9_]+$/, "Username may contain only letters, digits, and underscore"),
+
+        new_email: z
+            .email("Invalid email address")
+            .trim()
+            .max(254, "Email too long")
+            .transform(v => v.toLowerCase()),
+
+        new_password: PasswordSchema
+    }).partial()
+    .refine((data) => Object.keys(data).length > 0, {
+        message: "At least one field (username, email, or new password) must be provided to update.",
+    }), 
+}).strict();
