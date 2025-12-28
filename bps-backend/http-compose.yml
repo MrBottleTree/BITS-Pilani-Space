@@ -59,6 +59,7 @@ services:
       NODE_ENV: development
       CI: "true"
       DATABASE_URL: postgres://bps:lol@postgres:5432/bps_db
+      UV_THREADPOOL_SIZE: 8
     
     # Command to run inside the HTTP service container
     # pnpm install: Install project dependencies

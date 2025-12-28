@@ -1,11 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import { client } from "@repo/db/client";
-import argon2 from "argon2";
 import jwt from "jsonwebtoken";
 import { createId } from "@paralleldrive/cuid2";
 import * as Types from "../../../types/index.js";
 import { JWT_REFRESH_SECRET, JWT_SECRET, HTTP_STATUS } from "../../../config.js";
-import { fastHashToken, fastValidate, get_parsed_error_message } from "../utils/helper.js";
+import { fastHashToken, fastValidate, get_parsed_error_message, slowHash, slowVerify } from "../utils/helper.js";
 
 
 const REFRESH_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 Days
@@ -30,11 +29,7 @@ export const signup_post = async (req: Request, res: Response, next: NextFunctio
 
     try {
         // Extremly slow CPU intensive hashing algo (for low entropy guys)
-        const hashed_password = await argon2.hash(parsedBody.data.password, {
-            timeCost: 2, 
-            memoryCost: 2 ** 14,
-            parallelism: 1,
-        });
+        const hashed_password = await slowHash(parsedBody.data.password);
 
         const user = await client.user.create({
             data: {
@@ -67,14 +62,14 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
     try {
         const user = await client.user.findUnique({
             where: identifier.includes('@') ? { email: identifier, deleted_at: null } : { username: identifier, deleted_at: null },
-            select: { id: true, password_hash: true, email: true, role: true }
+            select: { id: true, username: true, password_hash: true, email: true, role: true }
         });
 
         // user not there in our db
         if (!user) return res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: "Invalid credentials", details: "User not found in the database" }).end();
 
         // Low entropy, hence the argon2
-        const passwordValid = await argon2.verify(user.password_hash, password);
+        const passwordValid = await slowVerify(user.password_hash, password);
 
         // wrong password given by user
         if (!passwordValid) return res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: "Invalid credentials", details: "Password does not match" }).end();
@@ -92,7 +87,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
         const token_hash = fastHashToken(refresh_token);
 
         const access_token = jwt.sign(
-            { userId: user.id, email: user.email, role: user.role },
+            { userId: user.id, username: user.username, email: user.email, role: user.role },
             JWT_SECRET,
             { expiresIn: ACCESS_EXPIRY_SEC }
         )
