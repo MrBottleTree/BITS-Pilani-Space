@@ -1,5 +1,6 @@
 import { z } from "zod";
 import crypto from "crypto";
+import argon2 from "argon2";
 
 export function get_parsed_error_message(result: z.ZodSafeParseError<any>) {
     return result.error.issues.map((issue) => ({
@@ -15,4 +16,16 @@ export function fastHashToken(token: string): string {
 export function fastValidate(incomingToken: string, storedHash: string): boolean{
     const incoming_hash = fastHashToken(incomingToken);
     return crypto.timingSafeEqual(Buffer.from(incoming_hash), Buffer.from(storedHash));
+}
+
+export function slowHash(data: string){
+    return argon2.hash(data, {
+        timeCost: 2, 
+        memoryCost: 2 ** 14,
+        parallelism: 1,
+    });
+}
+
+export function slowVerify(hashed: string, token: string){
+    return argon2.verify(hashed, token);
 }
