@@ -60,6 +60,18 @@ async function batch_delete_users(token, payload) {
     });
 }
 
+async function get_me(token) {
+    return await axios.get(`${BACKEND_URL}/api/${API_VERSION}/user/me`, {
+        headers: { Authorization: 'Bearer ' + token }
+    });
+}
+
+async function update_user(token, payload) {
+    return await axios.patch(`${BACKEND_URL}/api/${API_VERSION}/user/me`, payload, {
+        headers: { Authorization: 'Bearer ' + token }
+    });
+}
+
 module.exports = {
   axios,
   API_VERSION,
@@ -70,5 +82,7 @@ module.exports = {
   signout_user,
   refresh_token,
   delete_user,
-  batch_delete_users
+  batch_delete_users,
+  update_user,
+  get_me
 };
