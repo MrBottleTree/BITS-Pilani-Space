@@ -5,5 +5,6 @@ import * as middleware from "../middleware/utils/util.middleware.js";
 const router = Router();
 
 router.delete("/me", middleware.strong_middleware("USER"), userController.delete_user);
+router.patch("/me", middleware.strong_middleware("USER"), userController.update_user);
 
 export default router;

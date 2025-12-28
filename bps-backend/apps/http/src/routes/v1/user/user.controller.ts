@@ -26,3 +26,5 @@ export const delete_user = async (req: Request, res: Response, next: NextFunctio
         return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "error in database operation"}).end();
     }
 };
+
+export const update_user = async (req: Request, res: Response, next: NextFunction) => {};
