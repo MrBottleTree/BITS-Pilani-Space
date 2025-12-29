@@ -13,13 +13,13 @@ export const simple_middleware = (request_role: string) => {
             res.status(HTTP_STATUS.BAD_REQUEST).json({
                 "error": "Bad Request",
                 "details": parsed_header.error
-            }).end();
+            }).send();
             return REQUEST_HANDLED;
         }
 
         const auth_token = parsed_header.data.authorization;
         if(!auth_token) {
-            res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "no auth token found"}).end();
+            res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "no auth token found"}).send();
             return REQUEST_HANDLED;
         }
 
@@ -31,12 +31,12 @@ export const simple_middleware = (request_role: string) => {
                 res.status(HTTP_STATUS.BAD_REQUEST).json({
                     "error": "Parsing error",
                     "details": parsed_auth.error
-                }).end();
+                }).send();
                 return REQUEST_HANDLED;
             }
 
             if(parsed_auth.data.role != request_role){
-                res.status(HTTP_STATUS.UNAUTHORIZED).end();
+                res.status(HTTP_STATUS.UNAUTHORIZED).send();
                 return REQUEST_HANDLED;
             }
 
@@ -49,7 +49,7 @@ export const simple_middleware = (request_role: string) => {
             res.status(HTTP_STATUS.BAD_REQUEST).json({
                 "error": "Bad Request",
                 "details": error
-            }).end();
+            }).send();
             return REQUEST_HANDLED;
         }
     };
@@ -67,7 +67,7 @@ export const strong_middleware = (request_role: string) => {
 
         // for safety
         if(!user) {
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({"error": "user not defined in request"}).end();
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({"error": "user not defined in request"}).send();
             return REQUEST_HANDLED;
         }
 
@@ -75,12 +75,12 @@ export const strong_middleware = (request_role: string) => {
         const incoming_password = req.body.password;
 
         if(!incoming_password || !incoming_userid) {
-            res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "userid or password not given"}).end();
+            res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "userid or password not given"}).send();
             return REQUEST_HANDLED;
         }
 
         if(user.userId !== incoming_userid) {
-            res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "userid in the body does not match the access token user id"}).end();
+            res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "userid in the body does not match the access token user id"}).send();
             return REQUEST_HANDLED;
         }
         try{
@@ -90,22 +90,22 @@ export const strong_middleware = (request_role: string) => {
             });
 
             if(!stored_user) {
-                res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "user not found in database"}).end();
+                res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "user not found in database"}).send();
                 return REQUEST_HANDLED;
             }
-            if(stored_user.role != request_role) {res.status(HTTP_STATUS.UNAUTHORIZED).json({"error": `not of \"${request_role}\" role`}).end(); return REQUEST_HANDLED;}
-            if(stored_user.deleted_at) {res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "User marked as deleted"}).end(); return REQUEST_HANDLED;}
+            if(stored_user.role != request_role) {res.status(HTTP_STATUS.UNAUTHORIZED).json({"error": `not of \"${request_role}\" role`}).send(); return REQUEST_HANDLED;}
+            if(stored_user.deleted_at) {res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "User marked as deleted"}).send(); return REQUEST_HANDLED;}
 
             const password_verification = await argon2.verify(stored_user.password_hash, incoming_password);
 
-            if(!password_verification) {res.status(HTTP_STATUS.UNAUTHORIZED).json({"error": "wrong password"}).end(); return REQUEST_HANDLED;}
+            if(!password_verification) {res.status(HTTP_STATUS.UNAUTHORIZED).json({"error": "wrong password"}).send(); return REQUEST_HANDLED;}
 
             // if all the checks pass, then go ahead
             next();
             return REQUEST_NOTHANDLED;
         }
         catch(err) {
-            res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "user not found in database", "details": err}).end();
+            res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "user not found in database", "details": err}).send();
             return REQUEST_HANDLED
         }
     };

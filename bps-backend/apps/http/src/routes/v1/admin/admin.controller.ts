@@ -9,11 +9,11 @@ import { client } from "@repo/db";
 export const batch_delete = async (req: Request, res: Response, next: NextFunction) => {
     const parsed_body = BatchUserDeletionSchema.safeParse(req.body);
 
-    if(!parsed_body.success) return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "parse error", "details": get_parsed_error_message(parsed_body)}).end();
+    if(!parsed_body.success) return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "parse error", "details": get_parsed_error_message(parsed_body)}).send();
 
     const userIds = parsed_body.data?.userIds;
 
-    if(!userIds) return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "no user IDs found in body"}).end();
+    if(!userIds) return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "no user IDs found in body"}).send();
 
     try {
         const eligibleUsers = await client.user.findMany({
@@ -32,7 +32,7 @@ export const batch_delete = async (req: Request, res: Response, next: NextFuncti
                 message: "No eligible users were found for deletion.",
                 deletedCount: 0,
                 deletedIds: []
-            }).end();
+            }).send();
         }
 
         const updateResult = await client.user.updateMany({
@@ -45,14 +45,14 @@ export const batch_delete = async (req: Request, res: Response, next: NextFuncti
         });
         
         // race condition may occur
-        // if(updateResult.count !== idsToProcess.length) return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({"error": "error in deleting multiple users"}).end();
+        // if(updateResult.count !== idsToProcess.length) return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({"error": "error in deleting multiple users"}).send();
 
         return res.status(HTTP_STATUS.OK).json({
             message: "Batch deletion successful",
             requestedCount: userIds.length,
             deletedCount: updateResult.count,
             deletedIds: idsToProcess
-        }).end();
+        }).send();
 
     } catch (error) {
         console.error("Batch Delete Error:", error);

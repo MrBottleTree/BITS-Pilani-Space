@@ -11,7 +11,7 @@ export const delete_user = async (req: Request, res: Response, next: NextFunctio
     const user = req.user;
 
     // Just for safety
-    if(!user) return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({"error": "user not defined after parsing through middleware"}).end();
+    if(!user) return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({"error": "user not defined after parsing through middleware"}).send();
 
     // Here onwards i am assuming that the user is properly verified and stuff
     try {
@@ -21,10 +21,10 @@ export const delete_user = async (req: Request, res: Response, next: NextFunctio
             select: { deleted_at: true }
         });
 
-        return res.status(HTTP_STATUS.OK).json({"userId": user.userId, "deleted_at": updated_user.deleted_at}).end();
+        return res.status(HTTP_STATUS.OK).json({"userId": user.userId, "deleted_at": updated_user.deleted_at}).send();
     }
     catch {
-        return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "error in database operation"}).end();
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "error in database operation"}).send();
     }
 };
 
@@ -41,7 +41,7 @@ export const update_user = async (req: Request, res: Response, next: NextFunctio
 
         // Something is seriously wrong
         if(!current_user){
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).ssend();
             return;
         }
 
@@ -52,7 +52,7 @@ export const update_user = async (req: Request, res: Response, next: NextFunctio
 
         // Not even possible, something terrible wrong!!
         if(!stored_cur_user){
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).ssend();
             return;
         }
 
@@ -60,7 +60,7 @@ export const update_user = async (req: Request, res: Response, next: NextFunctio
 
         // user gave wrong password
         if(!match){
-            res.status(HTTP_STATUS.FORBIDDEN).send();
+            res.status(HTTP_STATUS.FORBIDDEN).ssend();
             return;
         }
 
@@ -108,7 +108,7 @@ export const update_user = async (req: Request, res: Response, next: NextFunctio
         res.status(HTTP_STATUS.OK).json({"message":"User updated", "user": updated_user});
     }
     catch(err){
-        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).ssend();
         return next(err);
     }
 };
@@ -136,6 +136,6 @@ export const get_user = async (req: Request, res: Response, next: NextFunction) 
         return res.status(HTTP_STATUS.OK).json({"user": stored_user});
     }
     catch(err){
-        return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
+        return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).ssend();
     }
 };

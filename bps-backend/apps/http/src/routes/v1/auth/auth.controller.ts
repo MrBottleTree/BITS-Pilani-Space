@@ -24,7 +24,7 @@ export const signup_post = async (req: Request, res: Response, next: NextFunctio
         return res.status(HTTP_STATUS.BAD_REQUEST).json({
             error: "Invalid signup data",
             details: get_parsed_error_message(parsedBody)
-        }).end();
+        }).send();
     }
 
     try {
@@ -41,11 +41,11 @@ export const signup_post = async (req: Request, res: Response, next: NextFunctio
             select: {id: true} // only need ID, not the entire row
         });
 
-        return res.status(HTTP_STATUS.CREATED).json({ id: user.id }).end();
+        return res.status(HTTP_STATUS.CREATED).json({ id: user.id }).send();
     }
 
     catch (error: any) {
-        return res.status(HTTP_STATUS.CONFLICT).json({"error": "Email or username already exists", details: error}).end(); // Conflict, probably email or username already exists
+        return res.status(HTTP_STATUS.CONFLICT).json({"error": "Email or username already exists", details: error}).send(); // Conflict, probably email or username already exists
     };
 
 };
@@ -54,7 +54,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
     const parsedBody = Types.SigninSchema.safeParse(req.body);
 
     // not clean data
-    if (!parsedBody.success) return res.status(HTTP_STATUS.BAD_REQUEST).json({error: "Invalid signin data", details: get_parsed_error_message(parsedBody)}).end();
+    if (!parsedBody.success) return res.status(HTTP_STATUS.BAD_REQUEST).json({error: "Invalid signin data", details: get_parsed_error_message(parsedBody)}).send();
     
     const identifier = parsedBody.data.identifier;
     const password = parsedBody.data.password;
@@ -66,13 +66,13 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
         });
 
         // user not there in our db
-        if (!user) return res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: "Invalid credentials", details: "User not found in the database" }).end();
+        if (!user) return res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: "Invalid credentials", details: "User not found in the database" }).send();
 
         // Low entropy, hence the argon2
         const passwordValid = await slowVerify(user.password_hash, password);
 
         // wrong password given by user
-        if (!passwordValid) return res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: "Invalid credentials", details: "Password does not match" }).end();
+        if (!passwordValid) return res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: "Invalid credentials", details: "Password does not match" }).send();
 
         // Make ID for refresh token
         const jti = createId();
@@ -115,7 +115,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
 export const signout_post = async (req: Request, res: Response, next: NextFunction) => {
     const refresh_token = req.cookies?.refresh_token as string | undefined;
 
-    if (!refresh_token) return res.status(HTTP_STATUS.BAD_REQUEST).end();
+    if (!refresh_token) return res.status(HTTP_STATUS.BAD_REQUEST).send();
 
     try {
         const decodedRefresh = jwt.verify(refresh_token, JWT_REFRESH_SECRET) as { userId: string; jti: string };
@@ -135,17 +135,17 @@ export const signout_post = async (req: Request, res: Response, next: NextFuncti
                 data: { revoked_at: new Date() },
             });
 
-            return res.status(HTTP_STATUS.NO_CONTENT).end();
+            return res.status(HTTP_STATUS.NO_CONTENT).send();
         }
-        return res.status(HTTP_STATUS.UNAUTHORIZED).end();
+        return res.status(HTTP_STATUS.UNAUTHORIZED).send();
     }
-    catch { return res.status(HTTP_STATUS.UNAUTHORIZED).end(); };
+    catch { return res.status(HTTP_STATUS.UNAUTHORIZED).send(); };
 };
 
 export const refresh_post = async (req: Request, res: Response, next: NextFunction) => {
     const refresh_token = req.cookies?.refresh_token;
 
-    if (!refresh_token) return res.status(HTTP_STATUS.BAD_REQUEST).end();
+    if (!refresh_token) return res.status(HTTP_STATUS.BAD_REQUEST).send();
 
     try {
         const decodedRefresh = jwt.verify(refresh_token, JWT_REFRESH_SECRET) as { userId: string; jti: string };
@@ -156,10 +156,10 @@ export const refresh_post = async (req: Request, res: Response, next: NextFuncti
             select: { userId: true, revoked_at: true, token_hash: true, user: { select: { id: true, email: true, role: true } } },
         });
 
-        if (!(row && row.userId === decodedRefresh.userId && !row.revoked_at)) return res.status(HTTP_STATUS.UNAUTHORIZED).end();
+        if (!(row && row.userId === decodedRefresh.userId && !row.revoked_at)) return res.status(HTTP_STATUS.UNAUTHORIZED).send();
 
         // CAUGHT
-        if (!fastValidate(refresh_token, row.token_hash)) return res.status(HTTP_STATUS.UNAUTHORIZED).end();
+        if (!fastValidate(refresh_token, row.token_hash)) return res.status(HTTP_STATUS.UNAUTHORIZED).send();
 
         const access_token = jwt.sign(
             { userId: row.user.id, email: row.user.email, role: row.user.role },
@@ -167,7 +167,7 @@ export const refresh_post = async (req: Request, res: Response, next: NextFuncti
             { expiresIn: ACCESS_EXPIRY_SEC }
         );
 
-        return res.status(HTTP_STATUS.OK).json({ access_token, expires_in: ACCESS_EXPIRY_SEC }).end();
+        return res.status(HTTP_STATUS.OK).json({ access_token, expires_in: ACCESS_EXPIRY_SEC }).send();
     }
-    catch { return res.status(HTTP_STATUS.UNAUTHORIZED).end(); };
+    catch { return res.status(HTTP_STATUS.UNAUTHORIZED).send(); };
 };
