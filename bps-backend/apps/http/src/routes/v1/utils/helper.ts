@@ -1,8 +1,7 @@
 import { z } from "zod";
 import crypto from "crypto";
 import argon2 from "argon2";
-import { S3Client } from "@aws-sdk/client-s3";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 const isLocal = process.env.NODE_ENV !== "production";
 
@@ -45,13 +44,21 @@ export const s3Client = new S3Client({
     endpoint: "http://127.0.0.1:9000"
 });
 
-export const uploadFile = async (fileName: string, fileBuffer: Buffer, mimetype: string
-) => {
+export const uploadFile = async (Key: string, fileBuffer: Buffer, mimetype: string) => {
     const command = new PutObjectCommand({
         Bucket: "my-app-bucket",
-        Key: fileName,
+        Key,
         Body: fileBuffer,
         ContentType: mimetype,
+    });
+
+    return s3Client.send(command);
+};
+
+export const deleteFile = async (Key: string) => {
+    const command = new DeleteObjectCommand({
+        Bucket: "my-app-bucket",
+        Key,
     });
 
     return s3Client.send(command);

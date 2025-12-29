@@ -53,7 +53,7 @@ model RefreshToken {
 model Avatar {
     id         String   @id @unique @default(cuid())
     name       String
-    imageURL   String
+    imageURL   String   @unique
     created_at DateTime @default(now())
     updated_at DateTime @default(now()) @updatedAt
 
