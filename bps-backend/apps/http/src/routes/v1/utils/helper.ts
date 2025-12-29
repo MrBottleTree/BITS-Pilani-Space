@@ -1,6 +1,10 @@
 import { z } from "zod";
 import crypto from "crypto";
 import argon2 from "argon2";
+import { S3Client } from "@aws-sdk/client-s3";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+
+const isLocal = process.env.NODE_ENV !== "production";
 
 export function get_parsed_error_message(result: z.ZodSafeParseError<any>) {
     return result.error.issues.map((issue) => ({
@@ -29,3 +33,26 @@ export function slowHash(data: string){
 export function slowVerify(hashed: string, token: string){
     return argon2.verify(hashed, token);
 }
+
+
+export const s3Client = new S3Client({
+    region: "us-east-1",
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID || "admin",
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "password"
+    },
+    forcePathStyle: true,
+    endpoint: "http://127.0.0.1:9000"
+});
+
+export const uploadFile = async (fileName: string, fileBuffer: Buffer, mimetype: string
+) => {
+    const command = new PutObjectCommand({
+        Bucket: "my-app-bucket",
+        Key: fileName,
+        Body: fileBuffer,
+        ContentType: mimetype,
+    });
+
+    return s3Client.send(command);
+};

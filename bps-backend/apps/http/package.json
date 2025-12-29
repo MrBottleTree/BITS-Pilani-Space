@@ -16,6 +16,7 @@
     "@aws-sdk/client-s3": "^3.958.0",
     "@paralleldrive/cuid2": "^3.0.4",
     "@repo/db": "workspace:*",
+    "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "argon2": "^0.44.0",
