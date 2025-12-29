@@ -11,5 +11,6 @@ const upload = multer({
 });
 
 router.post("/", simple_middleware("ADMIN"), upload.single("avatar"), avatarController.add_avatar);
+router.get("/:id", avatarController.get_avatar);
 
 export default router;

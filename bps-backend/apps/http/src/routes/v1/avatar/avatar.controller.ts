@@ -75,3 +75,41 @@ export const add_avatar = async (req: Request, res: Response, next: NextFunction
         details: "Transaction rolled back." 
     });
 };
+
+export const get_avatar = async (req: Request, res: Response, next: NextFunction) => {
+const { id } = req.params;
+
+    if (!id) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({ error: "Avatar ID is required" });
+        return;
+    }
+
+    try {
+        const avatar = await client.avatar.findUnique({
+            where: { id: id },
+            select: {
+                id: true,
+                name: true,
+                imageURL: true,
+                created_at: true,
+                created_by: {
+                    select: {
+                        id: true,
+                        username: true
+                    }
+                }
+            }
+        });
+
+        if (!avatar) {
+            res.status(HTTP_STATUS.NOT_FOUND).json({ error: "Avatar not found" });
+            return;
+        }
+
+        res.status(HTTP_STATUS.OK).json({ data: avatar });
+
+    } catch (err) {
+        console.error("Error fetching avatar:", err);
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: "Internal Server Error" });
+    }
+};
