@@ -116,4 +116,5 @@ export const AvatarFileSchema = z.object({
     originalname: z.string(),
     mimetype: MimeSchema,
     size: z.number().max(5 * 1024 * 1024, "File size must be less than 5MB"),
+    buffer: z.instanceof(Buffer, {message: "File buffer is missing or invalid"})
 });
