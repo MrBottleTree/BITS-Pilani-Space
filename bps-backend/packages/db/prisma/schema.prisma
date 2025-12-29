@@ -31,6 +31,8 @@ model User {
     createdAvatars Avatar[]      @relation("AvatarCreator")
 
     refreshTokens RefreshToken[]
+
+    @@index([role, deleted_at])
 }
 
 model RefreshToken {
@@ -43,6 +45,9 @@ model RefreshToken {
     last_used_at DateTime  @updatedAt
     user_agent   String?
     user         User      @relation(fields: [userId], references: [id])
+
+    @@index([userId])
+    @@index([expires_at])
 }
 
 model Avatar {
