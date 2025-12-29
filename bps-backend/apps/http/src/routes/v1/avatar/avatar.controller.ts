@@ -56,6 +56,7 @@ export const add_avatar = async (req: Request, res: Response, next: NextFunction
     }
 
     console.error("Upload failed. Rolling back...");
+    console.log(s3Result)
 
     if (dbResult.status === 'fulfilled') {
         const idToDelete = dbResult.value.id;
@@ -72,7 +73,9 @@ export const add_avatar = async (req: Request, res: Response, next: NextFunction
 
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ 
         error: "Upload failed", 
-        details: "Transaction rolled back." 
+        details: "Transaction rolled back.",
+        s3: s3Result,
+        db: dbResult
     });
 };
 
