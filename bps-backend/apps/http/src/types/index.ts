@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const RoleSchema = z.enum(["USER", "ADMIN"]);
 
+export const MimeSchema = z.enum(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+
 export const PasswordSchema = z
     .string()
     .min(8, "Password must be at least 8 characters")
@@ -104,3 +106,14 @@ export const UpdateUserSchema = z.object({
         message: "At least one field (username, email, or new password) must be provided to update.",
     }), 
 }).strict();
+
+export const AvatarMetadataSchema = z.object({
+    name: z.string().min(1, "Avatar name is required").max(50),
+});
+
+export const AvatarFileSchema = z.object({
+    fieldname: z.literal("avatar"),
+    originalname: z.string(),
+    mimetype: MimeSchema,
+    size: z.number().max(5 * 1024 * 1024, "File size must be less than 5MB"),
+});
