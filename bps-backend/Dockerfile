@@ -19,15 +19,10 @@ EXPOSE 3000
 CMD ["/bin/sh", "-c", "\
     echo 'Moving to packages/db for migrations...'; \
     cd packages/db; \
-    \
-    if [ \"$DB_RESET\" = \"true\" ]; then \
-        echo 'DB_RESET is true. Wiping database...'; \
-        npx prisma migrate reset --force; \
-    else \
-        echo 'Normal startup. Applying migrations...'; \
-        npx prisma migrate deploy; \
-    fi; \
-    \
+    npx prisma generate; \
+    echo Wiping database...'; \
+    npx prisma migrate reset --force; \
+    npx prisma migrate dev --name init; \
     echo 'Moving to server directory...'; \
     cd ../../apps/http; \
     \
