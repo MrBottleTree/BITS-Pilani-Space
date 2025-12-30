@@ -19,8 +19,7 @@ EXPOSE 3000
 CMD ["/bin/sh", "-c", "\
     echo 'Moving to packages/db for migrations...'; \
     cd packages/db; \
-    npx prisma generate; \
-    echo Wiping database...'; \
+    echo 'Wiping database...'; \
     npx prisma migrate reset --force; \
     npx prisma migrate dev --name init; \
     echo 'Moving to server directory...'; \
