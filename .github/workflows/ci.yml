@@ -1,4 +1,4 @@
-name: CI - Build and Test
+name: CI - Make Test
 
 on:
   push:
@@ -14,10 +14,5 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Run Integration Tests
-        run: |
-          docker compose up --build --exit-code-from tests
-      
-      - name: Tear Down
-        if: always()
-        run: docker compose down -v
+      - name: Run Tests
+        run: make test
