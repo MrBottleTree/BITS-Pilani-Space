@@ -19,7 +19,7 @@ async function startServer() {
 
     const PORT = Number(process.env.PORT) || 3000;
     app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server is now ready and listening on port ${PORT}`);
+      console.log(`Server is now ready and listening on 0.0.0.0:${PORT}`);
     });
 
   } catch (error) {
