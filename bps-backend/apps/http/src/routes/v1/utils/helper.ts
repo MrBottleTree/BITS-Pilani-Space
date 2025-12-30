@@ -37,11 +37,11 @@ export function slowVerify(hashed: string, token: string){
 export const s3Client = new S3Client({
     region: "us-east-1",
     credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID || "admin",
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "password"
+        accessKeyId: process.env.S3_ACCESS_KEY || "admin",
+        secretAccessKey: process.env.S3_SECRET_KEY || "password"
     },
     forcePathStyle: true,
-    endpoint: "http://127.0.0.1:9000"
+    endpoint: process.env.S3_ENDPOINT || "http://127.0.0.1:9000"
 });
 
 export const uploadFile = async (Key: string, fileBuffer: Buffer, mimetype: string) => {
