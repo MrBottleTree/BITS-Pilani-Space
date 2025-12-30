@@ -1,4 +1,5 @@
 const axios = require("axios");
+const NodeFormData = require("form-data"); 
 
 axios.defaults.validateStatus = () => true;
 
@@ -72,6 +73,29 @@ async function update_user(token, payload) {
     });
 }
 
+async function upload_avatar(token, metadata, fileBuffer, filename = "test.png") {
+    const form = new NodeFormData();
+    
+    if (metadata.name) {
+        form.append("name", metadata.name); 
+    }
+
+    if (fileBuffer) {
+        form.append("avatar", fileBuffer, filename); 
+    }
+
+    return await axios.post(`${BACKEND_URL}/api/${API_VERSION}/avatar`, form, {
+        headers: {
+            Authorization: 'Bearer ' + token,
+            ...form.getHeaders() 
+        }
+    });
+}
+
+async function get_avatar(token, avatarId) {
+    return await axios.get(`${BACKEND_URL}/api/${API_VERSION}/avatar/${avatarId}`);
+}
+
 module.exports = {
   axios,
   API_VERSION,
@@ -84,5 +108,7 @@ module.exports = {
   delete_user,
   batch_delete_users,
   update_user,
-  get_me
+  get_me,
+  upload_avatar,
+  get_avatar
 };

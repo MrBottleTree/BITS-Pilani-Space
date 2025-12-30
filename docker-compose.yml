@@ -1,0 +1,106 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: bps-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bps
+      POSTGRES_PASSWORD: lol
+      POSTGRES_DB: bps_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - bps_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bps -d bps_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bps-network
+
+  minio:
+    image: minio/minio
+    container_name: local_s3
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: "admin"
+      MINIO_ROOT_PASSWORD: "password"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 1s
+      timeout: 1s
+      retries: 3
+    networks:
+      - bps-network
+
+  minio-setup:
+    image: minio/mc
+    container_name: local_s3_setup
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      until (mc alias set local http://minio:9000 admin password); do echo '...waiting for MinIO...'; sleep 1; done;
+      mc mb local/my-app-bucket || true; 
+      mc anonymous set public local/my-app-bucket;
+      exit 0;
+      "
+    networks:
+      - bps-network
+
+  backend:
+    build: ./bps-backend
+    container_name: bps-backend
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "postgresql://bps:lol@postgres:5432/bps_db?schema=public"
+      S3_ENDPOINT: "http://minio:9000"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - bps-network
+
+  tests:
+    image: node:24-alpine
+    container_name: bps-tests
+    working_dir: /app/tests
+    volumes:
+      - ./tests:/app/tests
+    environment:
+      BACKEND_URL: "http://backend:3000"
+    networks:
+      - bps-network
+    depends_on:
+      - backend
+    command: >
+      sh -c "
+      apk add --no-cache curl && 
+      echo 'Waiting for backend...' && 
+      until curl -s http://backend:3000 > /dev/null; do 
+        echo '...backend not ready yet (ECONNREFUSED), retrying in 1s...'; 
+        sleep 1; 
+      done && 
+      echo 'Backend is UP! Starting tests...' && 
+      npm install && 
+      npm run test
+      "
+
+volumes:
+  bps_pgdata:
+  minio_data:
+
+networks:
+  bps-network:
+    driver: bridge

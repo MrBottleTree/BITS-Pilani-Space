@@ -5,46 +5,67 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+    provider = "prisma-client"
+    output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+    provider = "postgresql"
 }
 
 model User {
-  id            String         @id @default(cuid())
-  username      String         @unique
-  password_hash String
-  email         String         @unique
-  role          Role           @default(USER)
-  created_at    DateTime       @default(now())
-  updated_at    DateTime       @updatedAt
-  deleted_at    DateTime?
+    id            String         @id @unique @default(cuid())
+    username      String         @unique
+    password_hash String
+    email         String         @unique
+    role          Role           @default(USER)
+    created_at    DateTime       @default(now())
+    updated_at    DateTime       @default(now())
+    deleted_at    DateTime?
 
-  refreshTokens RefreshToken[]
+    // user wearing an avatar
+    avatarId      String?
+    avatar        Avatar?        @relation("UserWearingAvatar", fields: [avatarId], references: [id])
 
-  @@index([role, deleted_at])
+    // user (admin) creating an avatar
+    createdAvatars Avatar[]      @relation("AvatarCreator")
+
+    refreshTokens RefreshToken[]
+
+    @@index([role, deleted_at])
 }
 
 model RefreshToken {
-  id            String   @id @default(cuid())
-  token_hash    String
-  userId        String
-  created_at    DateTime @default(now())
-  expires_at    DateTime
-  revoked_at    DateTime?
-  last_used_at  DateTime @default(now())
-  user_agent    String?
+    id           String    @id @unique @default(cuid())
+    token_hash   String    @unique
+    userId       String
+    created_at   DateTime  @default(now())
+    expires_at   DateTime
+    revoked_at   DateTime?
+    last_used_at DateTime  @updatedAt
+    user_agent   String?
+    user         User      @relation(fields: [userId], references: [id])
 
-  user User @relation(fields: [userId], references: [id], onDelete: SetNull)
+    @@index([userId])
+    @@index([expires_at])
+}
 
-  @@index([userId])
-  @@index([expires_at])
+model Avatar {
+    id         String   @id @unique @default(cuid())
+    name       String
+    imageURL   String   @unique
+    created_at DateTime @default(now())
+    updated_at DateTime @default(now()) @updatedAt
+
+    // users WEARING this guy
+    users      User[]   @relation("UserWearingAvatar")
+
+    // the guy who CREATED this
+    userId     String?
+    created_by User?    @relation("AvatarCreator", fields: [userId], references: [id], onDelete: SetNull)
 }
 
 enum Role {
-  ADMIN
-  USER
+    ADMIN
+    USER
 }
