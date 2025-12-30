@@ -16,6 +16,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - bps-network
 
   minio:
     image: minio/minio
@@ -34,6 +36,8 @@ services:
       interval: 1s
       timeout: 1s
       retries: 3
+    networks:
+      - bps-network
 
   minio-setup:
     image: minio/mc
@@ -48,6 +52,8 @@ services:
       mc anonymous set public local/my-app-bucket;
       exit 0;
       "
+    networks:
+      - bps-network
 
   backend:
     build: ./bps-backend
@@ -60,13 +66,13 @@ services:
     volumes:
       - ./bps-backend:/app
       - /app/node_modules
-      - /app/packages/db/node_modules
-      - /app/apps/http/node_modules
     depends_on:
       postgres:
         condition: service_healthy
       minio:
         condition: service_healthy
+    networks:
+      - bps-network
 
   tests:
     image: node:24-alpine
@@ -75,13 +81,18 @@ services:
     volumes:
       - ./tests:/app/tests
     environment:
-      # Tests need to point to the docker service names
-      BACKEND_URL: "http://backend:3000" 
+      BACKEND_URL: "http://backend:3000"
     command: >
       sh -c "npm install && npm run test"
     depends_on:
       - backend
+    networks:
+      - bps-network
 
 volumes:
   bps_pgdata:
   minio_data:
+
+networks:
+  bps-network:
+    driver: bridge
