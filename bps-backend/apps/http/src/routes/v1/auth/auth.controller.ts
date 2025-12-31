@@ -153,7 +153,7 @@ export const refresh_post = async (req: Request, res: Response, next: NextFuncti
         // if it is valid, this line is run
         const row = await client.refreshToken.findUnique({
             where: { id: decodedRefresh.jti },
-            select: { userId: true, revoked_at: true, token_hash: true, user: { select: { id: true, email: true, role: true } } },
+            select: { userId: true, revoked_at: true, token_hash: true, user: { select: { id: true, username: true, email: true, role: true } } },
         });
 
         if (!(row && row.userId === decodedRefresh.userId && !row.revoked_at)) return res.status(HTTP_STATUS.UNAUTHORIZED).send();
@@ -162,7 +162,7 @@ export const refresh_post = async (req: Request, res: Response, next: NextFuncti
         if (!fastValidate(refresh_token, row.token_hash)) return res.status(HTTP_STATUS.UNAUTHORIZED).send();
 
         const access_token = jwt.sign(
-            { userId: row.user.id, email: row.user.email, role: row.user.role },
+            { userId: row.user.id, username: row.user.username, email: row.user.email, role: row.user.role },
             JWT_SECRET,
             { expiresIn: ACCESS_EXPIRY_SEC }
         );
