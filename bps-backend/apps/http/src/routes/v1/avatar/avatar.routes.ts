@@ -5,6 +5,7 @@ import { simple_middleware } from "../middleware/utils/util.middleware.js";
 const router = Router();
 
 router.post("/", simple_middleware("ADMIN"), avatarController.add_avatar);
+router.get("/", avatarController.get_all_avatar)
 router.get("/:id", avatarController.get_avatar);
 
 export default router;

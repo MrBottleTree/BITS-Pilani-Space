@@ -99,3 +99,5 @@ export const get_avatar = async (req: Request, res: Response, next: NextFunction
         res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: "Internal Server Error" });
     }
 };
+
+export const get_all_avatar = async (req: Request, res: Response, next: NextFunction) => {};
