@@ -56,6 +56,7 @@ model Avatar {
     imageKey   String   @unique
     created_at DateTime @default(now())
     updated_at DateTime @default(now()) @updatedAt
+    deleted_at DateTime?
 
     // users WEARING this guy
     users      User[]   @relation("UserWearingAvatar")
