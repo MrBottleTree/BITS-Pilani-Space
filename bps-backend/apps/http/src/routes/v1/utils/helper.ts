@@ -1,7 +1,7 @@
 import { z } from "zod";
 import crypto from "crypto";
 import argon2 from "argon2";
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 
 const isLocal = process.env.NODE_ENV !== "production";
 
@@ -62,4 +62,23 @@ export const deleteFile = async (Key: string) => {
     });
 
     return s3Client.send(command);
+};
+
+export const checkFileExists = async (key: string): Promise<boolean> => {
+    const command = new HeadObjectCommand({
+        Bucket: "my-app-bucket",
+        Key: key,
+    });
+
+    try {
+        await s3Client.send(command);
+        return true;
+    }
+    catch (error: any) {
+        if (error.name === "NotFound" || error.$metadata?.httpStatusCode === 404) {
+            return false;
+        }
+        console.error("Error checking S3 file existence:", error);
+        throw error;
+    }
 };
