@@ -1,4 +1,3 @@
-// This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
@@ -14,61 +13,79 @@ datasource db {
 }
 
 model User {
-    id            String         @id @unique @default(cuid())
-    username      String         @unique
+    id            String    @id @unique @default(cuid())
+    username      String    @unique
     password_hash String
-    email         String         @unique
-    role          Role           @default(USER)
-    created_at    DateTime       @default(now())
-    updated_at    DateTime       @default(now())
+    email         String    @unique
+    role          Role      @default(USER)
+    created_at    DateTime  @default(now())
+    updated_at    DateTime  @updatedAt
     deleted_at    DateTime?
 
     // user wearing an avatar
-    avatarId      String?
-    avatar        Avatar?        @relation("UserWearingAvatar", fields: [avatarId], references: [id])
+    avatar_id String?
+    avatar    Avatar? @relation("UserWearingAvatar", fields: [avatar_id], references: [id])
 
     // user (admin) creating an avatar
-    createdAvatars Avatar[]      @relation("AvatarCreator")
+    created_avatars Avatar[] @relation("AvatarCreator")
 
-    refreshTokens RefreshToken[]
+    refresh_tokens RefreshToken[]
+
+    elements Element[] @relation("ElementCreator")
 
     @@index([role, deleted_at])
 }
 
 model RefreshToken {
-    id           String    @id @unique @default(cuid())
-    token_hash   String    @unique
-    userId       String
+    id         String @id @unique @default(cuid())
+    token_hash String @unique
+
+    user_id String?
+
     created_at   DateTime  @default(now())
     expires_at   DateTime
     revoked_at   DateTime?
     last_used_at DateTime  @updatedAt
     user_agent   String?
-    user         User      @relation(fields: [userId], references: [id])
 
-    @@index([userId])
+    user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+    @@index([user_id])
     @@index([expires_at])
 }
 
 model Avatar {
-    id         String   @id @unique @default(cuid())
+    id         String    @id @unique @default(cuid())
     name       String
-    imageKey   String   @unique
-    created_at DateTime @default(now())
-    updated_at DateTime @default(now()) @updatedAt
+    image_key  String    @unique
+    created_at DateTime  @default(now())
+    updated_at DateTime  @default(now()) @updatedAt
     deleted_at DateTime?
 
     // users WEARING this guy
-    users      User[]   @relation("UserWearingAvatar")
+    users User[] @relation("UserWearingAvatar")
 
     // the guy who CREATED this
-    userId     String?
-    created_by User?    @relation("AvatarCreator", fields: [userId], references: [id], onDelete: SetNull)
+    user_id    String?
+    created_by User?   @relation("AvatarCreator", fields: [user_id], references: [id], onDelete: SetNull)
 
-    @@index([imageKey])
+    @@index([image_key])
 }
 
 enum Role {
     ADMIN
     USER
+}
+
+model Element {
+    id        String  @id @unique @default(cuid())
+    name      String
+    image_key String
+    static    Boolean
+
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+
+    user_id    String?
+    created_by User?   @relation("ElementCreator", fields: [user_id], references: [id], onDelete: SetNull)
 }

@@ -19,7 +19,7 @@ export const add_avatar = async (req: Request, res: Response, next: NextFunction
 
     try{
         // get the key and the name
-        const key = parsed_body.data.imageKey;
+        const key = parsed_body.data.image_key;
         const name = parsed_body.data.name;
 
         // verify if they key exists in the S3 bucket
@@ -37,8 +37,8 @@ export const add_avatar = async (req: Request, res: Response, next: NextFunction
             const db_response = await client.avatar.create({
                 data: {
                     name,
-                    imageKey: key,
-                    created_by: { connect: { id: current_user.userId }}
+                    image_key: key,
+                    created_by: { connect: { id: current_user.user_id }}
                 },
             });
 
@@ -76,7 +76,7 @@ export const get_avatar = async (req: Request, res: Response, next: NextFunction
             select: {
                 id: true,
                 name: true,
-                imageKey: true,
+                image_key: true,
                 created_at: true,
                 created_by: {
                     select: {
@@ -104,7 +104,7 @@ export const get_all_avatar = async (req: Request, res: Response, next: NextFunc
     try{
         const avatars = await client.avatar.findMany({
             where: { deleted_at: null },
-            select: { id: true, name: true, imageKey: true }
+            select: { id: true, name: true, image_key: true }
         });
 
         res.status(HTTP_STATUS.OK).json({

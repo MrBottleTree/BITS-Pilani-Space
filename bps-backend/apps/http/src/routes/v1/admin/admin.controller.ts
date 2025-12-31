@@ -11,14 +11,14 @@ export const batch_delete = async (req: Request, res: Response, next: NextFuncti
 
     if(!parsed_body.success) return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "parse error", "details": get_parsed_error_message(parsed_body)}).send();
 
-    const userIds = parsed_body.data?.userIds;
+    const user_ids = parsed_body.data?.user_ids;
 
-    if(!userIds) return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "no user IDs found in body"}).send();
+    if(!user_ids) return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "no user IDs found in body"}).send();
 
     try {
         const eligibleUsers = await client.user.findMany({
             where: {
-                id: { in: userIds },
+                id: { in: user_ids },
                 role: "USER",
                 deleted_at: null
             },
@@ -49,7 +49,7 @@ export const batch_delete = async (req: Request, res: Response, next: NextFuncti
 
         return res.status(HTTP_STATUS.OK).json({
             message: "Batch deletion successful",
-            requestedCount: userIds.length,
+            requestedCount: user_ids.length,
             deletedCount: updateResult.count,
             deletedIds: idsToProcess
         }).send();

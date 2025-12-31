@@ -13,17 +13,17 @@ describe("PATCH /api/v1/user/me - Update Profile", () => {
         const token = loginRes.data.access_token;
 
         const meRes = await utils.get_me(token);
-        const userId = meRes.data.user.id;
+        const user_id = meRes.data.user.id;
 
-        return { token, userId, username, email, password };
+        return { token, user_id, username, email, password };
     };
 
     test("1. Should successfully update ONLY the Username", async () => {
-        const { token, userId, password } = await setupUser();
+        const { token, user_id, password } = await setupUser();
         const newUsername = utils.makeUniqueUsername("updated");
 
         const res = await utils.update_user(token, {
-            id: userId,
+            id: user_id,
             password: password,
             user: { new_username: newUsername }
         });
@@ -36,11 +36,11 @@ describe("PATCH /api/v1/user/me - Update Profile", () => {
     });
 
     test("2. Should successfully update ONLY the Email", async () => {
-        const { token, userId, password } = await setupUser();
+        const { token, user_id, password } = await setupUser();
         const newEmail = `new_${utils.makeUniqueUsername()}@test.com`;
 
         const res = await utils.update_user(token, {
-            id: userId,
+            id: user_id,
             password: password,
             user: { new_email: newEmail }
         });
@@ -50,11 +50,11 @@ describe("PATCH /api/v1/user/me - Update Profile", () => {
     });
 
     test("3. Should successfully update ONLY the Password", async () => {
-        const { token, userId, email, password } = await setupUser();
+        const { token, user_id, email, password } = await setupUser();
         const newPassword = "NewSecurePassword123!";
 
         const res = await utils.update_user(token, {
-            id: userId,
+            id: user_id,
             password: password,
             user: { new_password: newPassword }
         });
@@ -69,13 +69,13 @@ describe("PATCH /api/v1/user/me - Update Profile", () => {
     });
 
     test("4. Should update Username, Email, and Password SIMULTANEOUSLY", async () => {
-        const { token, userId, password } = await setupUser();
+        const { token, user_id, password } = await setupUser();
         const newUser = utils.makeUniqueUsername("mega_update");
         const newEmail = `${newUser}@mega.com`;
         const newPass = "MegaPassword@123";
 
         const res = await utils.update_user(token, {
-            id: userId,
+            id: user_id,
             password: password,
             user: {
                 new_username: newUser,
@@ -90,10 +90,10 @@ describe("PATCH /api/v1/user/me - Update Profile", () => {
     });
 
     test("5. Should accept update if new_username is same as current (Idempotency)", async () => {
-        const { token, userId, username, password } = await setupUser();
+        const { token, user_id, username, password } = await setupUser();
 
         const res = await utils.update_user(token, {
-            id: userId,
+            id: user_id,
             password: password,
             user: { new_username: username }
         });
@@ -102,10 +102,10 @@ describe("PATCH /api/v1/user/me - Update Profile", () => {
     });
 
     test("6. Should FAIL (401) if current password is wrong", async () => {
-        const { token, userId } = await setupUser();
+        const { token, user_id } = await setupUser();
 
         const res = await utils.update_user(token, {
-            id: userId,
+            id: user_id,
             password: "WRONG_PASSWORD_123",
             user: { new_username: "hacker" }
         });
@@ -123,10 +123,10 @@ describe("PATCH /api/v1/user/me - Update Profile", () => {
     });
 
     test("8. Should FAIL (400) if Password field is missing from body", async () => {
-        const { token, userId } = await setupUser();
+        const { token, user_id } = await setupUser();
 
         const res = await utils.update_user(token, {
-            id: userId,
+            id: user_id,
             // password: missing!
             user: { new_username: "test" }
         });
@@ -135,10 +135,10 @@ describe("PATCH /api/v1/user/me - Update Profile", () => {
     });
 
     test("9. Should FAIL (400) if new_username is invalid (regex/length)", async () => {
-        const { token, userId, password } = await setupUser();
+        const { token, user_id, password } = await setupUser();
 
         const res = await utils.update_user(token, {
-            id: userId,
+            id: user_id,
             password: password,
             user: { new_username: "bad username with spaces" }
         });
@@ -147,10 +147,10 @@ describe("PATCH /api/v1/user/me - Update Profile", () => {
     });
 
     test("10. Should FAIL (400) if new_email is invalid format", async () => {
-        const { token, userId, password } = await setupUser();
+        const { token, user_id, password } = await setupUser();
 
         const res = await utils.update_user(token, {
-            id: userId,
+            id: user_id,
             password: password,
             user: { new_email: "not-an-email" }
         });
@@ -159,10 +159,10 @@ describe("PATCH /api/v1/user/me - Update Profile", () => {
     });
 
     test("11. Should FAIL (400) if new_password is too short", async () => {
-        const { token, userId, password } = await setupUser();
+        const { token, user_id, password } = await setupUser();
 
         const res = await utils.update_user(token, {
-            id: userId,
+            id: user_id,
             password: password,
             user: { new_password: "short" }
         });
@@ -171,10 +171,10 @@ describe("PATCH /api/v1/user/me - Update Profile", () => {
     });
 
     test("12. Should FAIL (400) if 'user' object is empty", async () => {
-        const { token, userId, password } = await setupUser();
+        const { token, user_id, password } = await setupUser();
 
         const res = await utils.update_user(token, {
-            id: userId,
+            id: user_id,
             password: password,
             user: {} // No fields provided
         });
@@ -188,7 +188,7 @@ describe("PATCH /api/v1/user/me - Update Profile", () => {
         const userB = await setupUser();
 
         const res = await utils.update_user(userB.token, {
-            id: userB.userId,
+            id: userB.user_id,
             password: userB.password,
             user: { new_username: userA.username }
         });
@@ -202,7 +202,7 @@ describe("PATCH /api/v1/user/me - Update Profile", () => {
         const userB = await setupUser();
 
         const res = await utils.update_user(userB.token, {
-            id: userB.userId,
+            id: userB.user_id,
             password: userB.password,
             user: { new_email: userA.email }
         });
@@ -218,13 +218,13 @@ describe("PATCH /api/v1/user/me - Update Profile", () => {
         const newName = "hacked_name";
 
         const res = await utils.update_user(userA.token, {
-            id: userB.userId,
+            id: userB.user_id,
             password: userA.password,
             user: { new_username: newName }
         });
 
         if (res.status === 200) {
-            expect(res.data.user.id).toBe(userA.userId);
+            expect(res.data.user.id).toBe(userA.user_id);
             const checkB = await utils.get_me(userB.token);
             expect(checkB.data.user.username).not.toBe(newName);
         }

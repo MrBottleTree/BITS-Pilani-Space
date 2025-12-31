@@ -61,7 +61,7 @@ export const SigninSchema = z.object({
 });
 
 export const UserSchema = z.object({
-    userId: z.string(),
+    user_id: z.string(),
     username: z.string(),
     email: z.email(),
     role: RoleSchema
@@ -75,7 +75,7 @@ export const AuthorizationHeaderSchema = z.object({
 });
 
 export const BatchUserDeletionSchema = z.object({
-  userIds: z
+  user_ids: z
     .array(z.string().min(1, "ID cannot be empty"))
     .min(1, "At least one ID is required")
     .max(1000, "Cannot delete more than 1000 users at once")
@@ -124,5 +124,5 @@ export const ImageFileSchema = z.object({
 
 export const AddAvatarSchema = z.object({
     name: z.string(),
-    imageKey: z.string()
+    image_key: z.string()
 });

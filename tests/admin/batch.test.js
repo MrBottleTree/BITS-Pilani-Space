@@ -2,7 +2,7 @@ const utils = require("../utils/testUtils");
 
 describe("Admin Batch Deletion", () => {
     let adminToken;
-    let adminUserId;
+    let adminuser_id;
     const adminPassword = "AdminPassword123!";
 
     beforeAll(async () => {
@@ -22,14 +22,14 @@ describe("Admin Batch Deletion", () => {
         });
 
         adminToken = signinRes.data.access_token;
-        adminUserId = signinRes.data.id;
+        adminuser_id = signinRes.data.id;
     });
 
     test("should fail if no auth token is provided", async () => {
         const payload = {
-            userIds: ["some-uuid"],
+            user_ids: ["some-uuid"],
             password: adminPassword,
-            id: adminUserId
+            id: adminuser_id
         };
 
         const response = await utils.batch_delete_users("", payload);
@@ -47,22 +47,22 @@ describe("Admin Batch Deletion", () => {
         await utils.signup_user(userCreds);
         const signinRes = await utils.signin_user({"identifier": userCreds.username, "password": userCreds.password});
         const userToken = signinRes.data.access_token;
-        const userID = signinRes.data.id;
+        const user_id = signinRes.data.id;
 
         const response = await utils.batch_delete_users(userToken, {
-            userIds: ["some-uuid"],
+            user_ids: ["some-uuid"],
             password: userCreds.password,
-            id: userID
+            id: user_id
         });
 
         expect(response.status).toBe(401);
     });
 
-    test("should fail if validation fails (missing userIds)", async () => {
+    test("should fail if validation fails (missing user_ids)", async () => {
         const payload = {
             password: adminPassword,
-            id: adminUserId
-            // missing userIds
+            id: adminuser_id
+            // missing user_ids
         };
 
         const response = await utils.batch_delete_users(adminToken, payload);
@@ -70,11 +70,11 @@ describe("Admin Batch Deletion", () => {
         expect(response.status).toBe(400);
     });
 
-    test("should fail if userIds array is empty", async () => {
+    test("should fail if user_ids array is empty", async () => {
         const payload = {
-            userIds: [],
+            user_ids: [],
             password: adminPassword,
-            id: adminUserId
+            id: adminuser_id
         };
 
         const response = await utils.batch_delete_users(adminToken, payload);
@@ -84,9 +84,9 @@ describe("Admin Batch Deletion", () => {
 
     test("should fail if Admin provides incorrect confirmation password", async () => {
         const payload = {
-            userIds: ["550e8400-e29b-41d4-a716-446655440000"],
+            user_ids: ["550e8400-e29b-41d4-a716-446655440000"],
             password: "WrongPassword123!",
-            id: adminUserId
+            id: adminuser_id
         };
 
         const response = await utils.batch_delete_users(adminToken, payload);
@@ -110,9 +110,9 @@ describe("Admin Batch Deletion", () => {
 
         // 2. Admin deletes them
         const payload = {
-            userIds: victims,
+            user_ids: victims,
             password: adminPassword,
-            id: adminUserId
+            id: adminuser_id
         };
 
         const response = await utils.batch_delete_users(adminToken, payload);
@@ -136,9 +136,9 @@ describe("Admin Batch Deletion", () => {
 
         // Try to delete Real + Fake
         const payload = {
-            userIds: [realId, fakeId],
+            user_ids: [realId, fakeId],
             password: adminPassword,
-            id: adminUserId
+            id: adminuser_id
         };
 
         const response = await utils.batch_delete_users(adminToken, payload);
@@ -159,21 +159,21 @@ describe("Admin Batch Deletion", () => {
             role: "USER"
         };
         const res = await utils.signup_user(creds);
-        const userId = res.data.id;
+        const user_id = res.data.id;
 
         // Admin tries to delete User + THEMSELVES
         const payload = {
-            userIds: [userId, adminUserId],
+            user_ids: [user_id, adminuser_id],
             password: adminPassword,
-            id: adminUserId
+            id: adminuser_id
         };
 
         const response = await utils.batch_delete_users(adminToken, payload);
 
         expect(response.status).toBe(200);
         expect(response.data.deletedCount).toBe(1);
-        expect(response.data.deletedIds).toContain(userId);
-        expect(response.data.deletedIds).not.toContain(adminUserId);
+        expect(response.data.deletedIds).toContain(user_id);
+        expect(response.data.deletedIds).not.toContain(adminuser_id);
     });
 
     test("should PROTECT other Admins (Admin cannot delete other Admins)", async () => {
@@ -189,9 +189,9 @@ describe("Admin Batch Deletion", () => {
 
         // First Admin tries to delete Second Admin
         const payload = {
-            userIds: [admin2Id],
+            user_ids: [admin2Id],
             password: adminPassword,
-            id: adminUserId
+            id: adminuser_id
         };
 
         const response = await utils.batch_delete_users(adminToken, payload);
@@ -211,8 +211,8 @@ describe("Admin Batch Deletion", () => {
             role: "USER"
         };
         const res = await utils.signup_user(creds);
-        const userId = res.data.id;
-        const payload = { userIds: [userId], password: adminPassword, id: adminUserId };
+        const user_id = res.data.id;
+        const payload = { user_ids: [user_id], password: adminPassword, id: adminuser_id };
 
         await utils.batch_delete_users(adminToken, payload);
 
@@ -232,11 +232,11 @@ describe("Admin Batch Deletion", () => {
             role: "USER"
         };
         const res = await utils.signup_user(creds);
-        const userId = res.data.id;
+        const user_id = res.data.id;
 
         // Delete User
         await utils.batch_delete_users(adminToken, {
-            userIds: [userId],
+            user_ids: [user_id],
             password: adminPassword
         });
 

@@ -92,8 +92,8 @@ async function upload_avatar(token, metadata, fileBuffer, filename = "test.png")
     });
 }
 
-async function get_avatar(token, avatarId) {
-    return await axios.get(`${BACKEND_URL}/api/${API_VERSION}/avatar/${avatarId}`);
+async function get_avatar(token, avatar_id) {
+    return await axios.get(`${BACKEND_URL}/api/${API_VERSION}/avatar/${avatar_id}`);
 }
 
 module.exports = {

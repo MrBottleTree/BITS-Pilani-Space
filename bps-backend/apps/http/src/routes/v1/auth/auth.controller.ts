@@ -78,7 +78,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
         const jti = createId();
 
         const refresh_token = jwt.sign(
-            { userId: user.id, jti: jti },
+            { user_id: user.id, jti: jti },
             JWT_REFRESH_SECRET,
             { expiresIn: "7d" }
         );
@@ -87,7 +87,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
         const token_hash = fastHashToken(refresh_token);
 
         const access_token = jwt.sign(
-            { userId: user.id, username: user.username, email: user.email, role: user.role },
+            { user_id: user.id, username: user.username, email: user.email, role: user.role },
             JWT_SECRET,
             { expiresIn: ACCESS_EXPIRY_SEC }
         )
@@ -95,7 +95,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
         await client.refreshToken.create({
             data: {
                 id: jti, // Use our own ID
-                userId: user.id,
+                user_id: user.id,
                 token_hash,
                 expires_at: new Date(Date.now() + REFRESH_EXPIRY_MS),
                 user_agent: req.headers["user-agent"] || ""
@@ -118,14 +118,14 @@ export const signout_post = async (req: Request, res: Response, next: NextFuncti
     if (!refresh_token) return res.status(HTTP_STATUS.BAD_REQUEST).send();
 
     try {
-        const decodedRefresh = jwt.verify(refresh_token, JWT_REFRESH_SECRET) as { userId: string; jti: string };
+        const decodedRefresh = jwt.verify(refresh_token, JWT_REFRESH_SECRET) as { user_id: string; jti: string };
 
         const row = await client.refreshToken.findUnique({
             where: { id: decodedRefresh.jti },
-            select: { id: true, userId: true, revoked_at: true },
+            select: { id: true, user_id: true, revoked_at: true },
         });
 
-        if (row && row.userId === decodedRefresh.userId && !row.revoked_at) {
+        if (row && row.user_id === decodedRefresh.user_id && !row.revoked_at) {
 
             // invalidate the cookie on client side
             res.clearCookie("refresh_token", { path: "/api/v1/auth" });
@@ -148,21 +148,21 @@ export const refresh_post = async (req: Request, res: Response, next: NextFuncti
     if (!refresh_token) return res.status(HTTP_STATUS.BAD_REQUEST).send();
 
     try {
-        const decodedRefresh = jwt.verify(refresh_token, JWT_REFRESH_SECRET) as { userId: string; jti: string };
+        const decodedRefresh = jwt.verify(refresh_token, JWT_REFRESH_SECRET) as { user_id: string; jti: string };
 
         // if it is valid, this line is run
         const row = await client.refreshToken.findUnique({
             where: { id: decodedRefresh.jti },
-            select: { userId: true, revoked_at: true, token_hash: true, user: { select: { id: true, username: true, email: true, role: true } } },
+            select: { user_id: true, revoked_at: true, token_hash: true, user: { select: { id: true, username: true, email: true, role: true } } },
         });
 
-        if (!(row && row.userId === decodedRefresh.userId && !row.revoked_at)) return res.status(HTTP_STATUS.UNAUTHORIZED).send();
+        if (!(row && row.user_id === decodedRefresh.user_id && !row.revoked_at && row.user)) return res.status(HTTP_STATUS.UNAUTHORIZED).send();
 
         // CAUGHT
         if (!fastValidate(refresh_token, row.token_hash)) return res.status(HTTP_STATUS.UNAUTHORIZED).send();
 
         const access_token = jwt.sign(
-            { userId: row.user.id, username: row.user.username, email: row.user.email, role: row.user.role },
+            { user_id: row.user.id, username: row.user.username, email: row.user.email, role: row.user.role },
             JWT_SECRET,
             { expiresIn: ACCESS_EXPIRY_SEC }
         );
