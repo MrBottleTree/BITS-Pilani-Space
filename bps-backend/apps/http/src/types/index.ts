@@ -100,7 +100,9 @@ export const UpdateUserSchema = z.object({
             .max(254, "Email too long")
             .transform(v => v.toLowerCase()),
 
-        new_password: PasswordSchema
+        new_password: PasswordSchema,
+
+        new_avatar: z.string()
     }).partial()
     .refine((data) => Object.keys(data).length > 0, {
         message: "At least one field (username, email, or new password) must be provided to update.",

@@ -41,7 +41,7 @@ export const update_user = async (req: Request, res: Response, next: NextFunctio
 
         // Something is seriously wrong
         if(!current_user){
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).ssend();
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
             return;
         }
 
@@ -52,7 +52,7 @@ export const update_user = async (req: Request, res: Response, next: NextFunctio
 
         // Not even possible, something terrible wrong!!
         if(!stored_cur_user){
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).ssend();
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
             return;
         }
 
@@ -60,12 +60,13 @@ export const update_user = async (req: Request, res: Response, next: NextFunctio
 
         // user gave wrong password
         if(!match){
-            res.status(HTTP_STATUS.FORBIDDEN).ssend();
+            res.status(HTTP_STATUS.FORBIDDEN).send();
             return;
         }
 
         const new_username = parsed_body.data.user.new_username;
         const new_email = parsed_body.data.user.new_email;
+        const new_avatar = parsed_body.data.user.new_avatar;
 
         // If user wants to update atleast one if username or email
         if(new_username || new_email){
@@ -97,6 +98,7 @@ export const update_user = async (req: Request, res: Response, next: NextFunctio
         
         if(new_username) updated_data.username = new_username;
         if(new_email) updated_data.email = new_email;
+        if(new_avatar) updated_data.avatarId = new_avatar
         if(new_password) updated_data.password_hash = await slowHash(new_password);
 
         const updated_user = await client.user.update({
@@ -108,7 +110,7 @@ export const update_user = async (req: Request, res: Response, next: NextFunctio
         res.status(HTTP_STATUS.OK).json({"message":"User updated", "user": updated_user});
     }
     catch(err){
-        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).ssend();
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
         return next(err);
     }
 };
@@ -136,6 +138,6 @@ export const get_user = async (req: Request, res: Response, next: NextFunction) 
         return res.status(HTTP_STATUS.OK).json({"user": stored_user});
     }
     catch(err){
-        return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).ssend();
+        return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
     }
 };
