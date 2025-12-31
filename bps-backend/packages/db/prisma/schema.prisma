@@ -53,7 +53,7 @@ model RefreshToken {
 model Avatar {
     id         String   @id @unique @default(cuid())
     name       String
-    imageURL   String   @unique
+    imageKey   String   @unique
     created_at DateTime @default(now())
     updated_at DateTime @default(now()) @updatedAt
 
@@ -63,6 +63,8 @@ model Avatar {
     // the guy who CREATED this
     userId     String?
     created_by User?    @relation("AvatarCreator", fields: [userId], references: [id], onDelete: SetNull)
+
+    @@index([imageKey])
 }
 
 enum Role {

@@ -1,86 +1,69 @@
 import { NextFunction, Request, Response } from "express";
 import { HTTP_STATUS } from "../../../config.js";
 import * as Types from "../../../types/index.js"
-import { deleteFile, get_parsed_error_message, uploadFile } from "../utils/helper.js";
+import { checkFileExists, deleteFile, get_parsed_error_message, uploadFile } from "../utils/helper.js";
 import { client } from "@repo/db";
 
 export const add_avatar = async (req: Request, res: Response, next: NextFunction) => {
-    const uploaded_file = req.file;
-    
-    if(!uploaded_file){
-        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "no file uploaded"});
-        return;
-    }
-
-    const metadata = Types.AvatarMetadataSchema.safeParse(req.body);
-    const actual_file = Types.AvatarFileSchema.safeParse(req.file);
-
-    if(!metadata.success){
-        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "bad metadata", "details": get_parsed_error_message(metadata)});
-        return;
-    }
-
-    if(!actual_file.success){
-        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "bad file", "details": get_parsed_error_message(actual_file)});
-        return;
-    }
-
     const current_user = req.user;
-
-    if(!current_user){
-        res.status(HTTP_STATUS.BAD_REQUEST).json({"error":"User not found"});
-        return;
-    }
-    const key = `avatars/${Date.now()}_${actual_file.data.originalname}`;
     
-    const s3_promise = uploadFile(key, actual_file.data.buffer, actual_file.data.mimetype);
-    const db_promise = client.avatar.create({
-        data: {
-            name: metadata.data.name,
-            imageURL: key,
-            created_by: { connect: { id: current_user.userId } }
-        },
-        select: { id: true, imageURL: true, name: true }
-    });
+    // shouldnt happen but ok
+    if(!current_user) return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "user not found in request"});
 
-    // Wait for BOTH to finish completely
-    const [s3Result, dbResult] = await Promise.allSettled([s3_promise, db_promise]);
+    const parsed_body = Types.AddAvatarSchema.safeParse(req.body);
 
-    if (s3Result.status === 'fulfilled' && dbResult.status === 'fulfilled') {
-        const stored_avatar = dbResult.value;
-        
-        return res.status(HTTP_STATUS.OK).json({
-            message: "avatar created successfully",
-            avatar: stored_avatar
-        });
+    if(!parsed_body.success){
+        res.status(HTTP_STATUS.BAD_REQUEST).json({"error":"error parsing the body", "details": get_parsed_error_message(parsed_body)});
+        return
     }
 
-    console.error("Upload failed. Rolling back...");
-    console.log(s3Result)
+    try{
+        // get the key and the name
+        const key = parsed_body.data.imageKey;
+        const name = parsed_body.data.name;
 
-    if (dbResult.status === 'fulfilled') {
-        const idToDelete = dbResult.value.id;
-        await client.avatar.delete({ where: { id: idToDelete } });
-        console.log("Rolled back Database record");
+        // verify if they key exists in the S3 bucket
+        const check = await checkFileExists(key);
+        if(!check){
+            res.status(HTTP_STATUS.NOT_FOUND).json({"error": "no such key exists in the storage"});
+            return
+        }
+
+        // here onwards, the image exists in the s3 bucket
+        // start to store the key in db or something
+    
+        // check for unique constraint
+        try{
+            const db_response = await client.avatar.create({
+                data: {
+                    name,
+                    imageKey: key,
+                    created_by: { connect: { id: current_user.userId }}
+                },
+            });
+
+            res.status(HTTP_STATUS.OK).json({
+                "message": "Avatar uploaded successfully",
+                avatar: db_response
+            });
+
+            return;
+        }
+        catch(err) {
+            // unique constraint mostly, FUTURE WORK to check the exact error
+            console.log(err);
+            res.status(HTTP_STATUS.CONFLICT).json({"error": "Avatar with exact key exists"});
+            return;
+        }
     }
-
-    if (s3Result.status === 'fulfilled') {
-        await deleteFile(key);
-        console.log("Rolled back S3 file");
-    } else {
-        await deleteFile(key).catch(() => {}); 
+    catch {
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
+        return
     }
-
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ 
-        error: "Upload failed", 
-        details: "Transaction rolled back.",
-        s3: s3Result,
-        db: dbResult
-    });
 };
 
 export const get_avatar = async (req: Request, res: Response, next: NextFunction) => {
-const { id } = req.params;
+    const { id } = req.params;
 
     if (!id) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({ error: "Avatar ID is required" });
@@ -93,7 +76,7 @@ const { id } = req.params;
             select: {
                 id: true,
                 name: true,
-                imageURL: true,
+                imageKey: true,
                 created_at: true,
                 created_by: {
                     select: {

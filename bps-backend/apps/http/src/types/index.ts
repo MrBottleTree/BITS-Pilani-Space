@@ -109,15 +109,20 @@ export const UpdateUserSchema = z.object({
     }), 
 }).strict();
 
-export const AvatarMetadataSchema = z.object({
-    name: z.string().min(1, "Avatar name is required").max(50),
+export const ImageMetadataSchema = z.object({
+    name: z.string().min(1, "Image name is required").max(50),
 }).strict();
 
-export const AvatarFileSchema = z.object({
-    fieldname: z.literal("avatar"),
+export const ImageFileSchema = z.object({
+    fieldname: z.string(),
     originalname: z.string(),
     encoding: z.string(),
     mimetype: MimeSchema,
     size: z.number().max(5 * 1024 * 1024, "File size must be less than 5MB"),
     buffer: z.instanceof(Buffer, {message: "File buffer is missing or invalid"})
 }).strict();
+
+export const AddAvatarSchema = z.object({
+    name: z.string(),
+    imageKey: z.string()
+});
