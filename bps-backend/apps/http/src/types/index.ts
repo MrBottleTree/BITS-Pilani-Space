@@ -126,3 +126,9 @@ export const AddAvatarSchema = z.object({
     name: z.string(),
     image_key: z.string()
 });
+
+export const AddElementSchema = z.object({
+    name: z.string(),
+    image_key: z.string(),
+    static: z.boolean(),
+}).strict();

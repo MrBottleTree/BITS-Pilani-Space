@@ -85,7 +85,10 @@ model Element {
 
     created_at DateTime @default(now())
     updated_at DateTime @updatedAt
+    deleted_at DateTime?
 
     user_id    String?
     created_by User?   @relation("ElementCreator", fields: [user_id], references: [id], onDelete: SetNull)
+
+    @@unique([image_key, static])
 }
