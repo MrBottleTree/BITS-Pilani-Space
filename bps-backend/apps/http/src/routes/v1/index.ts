@@ -4,6 +4,7 @@ import userRouter from "./user/user.routes.js";
 import adminRouter from "./admin/admin.routes.js";
 import avatarRouter from "./avatar/avatar.routes.js";
 import cloudRouter from "./cloud/cloud.routes.js";
+import elementRouter from "./element/element.routes.js";
 
 const router = Router();
 
@@ -17,5 +18,6 @@ router.use("/user", userRouter);
 router.use("/admin", adminRouter);
 router.use("/avatar", avatarRouter);
 router.use("/cloud", cloudRouter);
+router.use("/element", elementRouter);
 
 export default router;
