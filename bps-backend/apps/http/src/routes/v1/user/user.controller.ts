@@ -16,12 +16,12 @@ export const delete_user = async (req: Request, res: Response, next: NextFunctio
     // Here onwards i am assuming that the user is properly verified and stuff
     try {
         const updated_user = await client.user.update({
-            where: { id: user.userId },
+            where: { id: user.user_id },
             data: { deleted_at: new Date() },
             select: { deleted_at: true }
         });
 
-        return res.status(HTTP_STATUS.OK).json({"userId": user.userId, "deleted_at": updated_user.deleted_at}).send();
+        return res.status(HTTP_STATUS.OK).json({"user_id": user.user_id, "deleted_at": updated_user.deleted_at}).send();
     }
     catch {
         return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "error in database operation"}).send();
@@ -46,7 +46,7 @@ export const update_user = async (req: Request, res: Response, next: NextFunctio
         }
 
         const stored_cur_user = await client.user.findUnique({
-            where: {id: current_user.userId},
+            where: {id: current_user.user_id},
             select: {id: true, username: true, email: true, password_hash: true}
         });
 
@@ -98,7 +98,7 @@ export const update_user = async (req: Request, res: Response, next: NextFunctio
         
         if(new_username) updated_data.username = new_username;
         if(new_email) updated_data.email = new_email;
-        if(new_avatar) updated_data.avatarId = new_avatar
+        if(new_avatar) updated_data.avatar_id = new_avatar
         if(new_password) updated_data.password_hash = await slowHash(new_password);
 
         const updated_user = await client.user.update({
@@ -121,7 +121,7 @@ export const get_user = async (req: Request, res: Response, next: NextFunction) 
 
     try{
         const stored_user = await client.user.findUnique({
-            where: { id: user.userId },
+            where: { id: user.user_id },
             select: {
                 id: true,
                 username: true,

@@ -91,7 +91,7 @@ export function user_traffic() {
   const email = `${username}@test.com`;
   const password = 'StrongPassword123!';
   
-  let userId = null;
+  let user_id = null;
   let accessToken = null;
 
   // 1. SIGNUP
@@ -102,7 +102,7 @@ export function user_traffic() {
     t_signup.add(r1.timings.duration);
     if (!check(r1, { 'Signup is 201': (r) => r.status === 201 })) return; // Stop if failed
     
-    userId = r1.json('id');
+    user_id = r1.json('id');
     thinkTime();
 
     // 2. SIGNIN
@@ -140,7 +140,7 @@ export function user_traffic() {
 
     // 6. DELETE SELF (The CPU Killer)
     // Strong Middleware runs verify() -> DB Fetch -> Argon2 Verify -> DB Update
-    const p6 = JSON.stringify({ id: userId, password: password });
+    const p6 = JSON.stringify({ id: user_id, password: password });
     
     // Using http.del directly as we need custom method
     const r6 = http.del(`${BASE_URL}/user/me`, p6, {
@@ -206,7 +206,7 @@ export function admin_tasks() {
 
   // 3. BATCH DELETE
   const payload = JSON.stringify({
-      userIds: victimIds,
+      user_ids: victimIds,
       password: password
   });
 

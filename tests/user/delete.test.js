@@ -3,7 +3,7 @@ const utils = require("../utils/testUtils");
 describe("User Account Deletion", () => {
     let userData;
     let authToken;
-    let userId;
+    let user_id;
 
     beforeEach(async () => {
         const uniqueSuffix = utils.makeUniqueUsername();
@@ -16,7 +16,7 @@ describe("User Account Deletion", () => {
 
         const signup_resp = await utils.signup_user(userData);
 
-        userId = signup_resp.data.id
+        user_id = signup_resp.data.id
 
         const signin_resp = await utils.signin_user({
             identifier: userData.email,
@@ -28,7 +28,7 @@ describe("User Account Deletion", () => {
 
     test("Should successfully mark user deleted when ID and Password are correct", async () => {
         const payload = {
-            id: userId,
+            id: user_id,
             password: userData.password
         };
 
@@ -36,7 +36,7 @@ describe("User Account Deletion", () => {
 
         expect(response.status).toBe(200);
         expect(response.data).toHaveProperty("deleted_at");
-        expect(response.data.userId).toBe(userId);
+        expect(response.data.user_id).toBe(user_id);
     });
 
     test("Should fail if the Body ID does not match the Token ID", async () => {
@@ -48,12 +48,12 @@ describe("User Account Deletion", () => {
         const response = await utils.delete_user(authToken, payload);
 
         expect(response.status).toBe(400);
-        expect(response.data.error).toMatch(/userid.*does not match/i);
+        expect(response.data.error).toMatch(/user_id.*does not match/i);
     });
 
     test("Should return 401 if the password is incorrect", async () => {
         const payload = {
-            id: userId,
+            id: user_id,
             password: "WrongPassword123!"
         };
 
@@ -64,7 +64,7 @@ describe("User Account Deletion", () => {
     });
 
     test("Should return 400 if ID or Password is missing in body", async () => {
-        const resNoPass = await utils.delete_user(authToken, { id: userId });
+        const resNoPass = await utils.delete_user(authToken, { id: user_id });
         expect(resNoPass.status).toBe(400);
 
         const resNoId = await utils.delete_user(authToken, { password: userData.password });
@@ -73,7 +73,7 @@ describe("User Account Deletion", () => {
 
     test("Should return 400 (or 401) if token is invalid", async () => {
         const payload = {
-            id: userId,
+            id: user_id,
             password: userData.password
         };
 
@@ -83,7 +83,7 @@ describe("User Account Deletion", () => {
     });
 
     test("Should fail if the user is already deleted", async () => {
-        const payload = { id: userId, password: userData.password };
+        const payload = { id: user_id, password: userData.password };
 
         const firstRes = await utils.delete_user(authToken, payload);
         expect(firstRes.status).toBe(200);
@@ -105,7 +105,7 @@ describe("User Account Deletion", () => {
 
         const signup_resp = await utils.signup_user(userData);
 
-        userId = signup_resp.data.id
+        user_id = signup_resp.data.id
 
         const signin_resp = await utils.signin_user({
             identifier: userData.email,
@@ -114,7 +114,7 @@ describe("User Account Deletion", () => {
         
         authToken = signin_resp.data.access_token
 
-        const payload = { id: userId, password: userData.password };
+        const payload = { id: user_id, password: userData.password };
         const response = await utils.delete_user(authToken, payload);
         expect(response.status).toBe(401);
     });
