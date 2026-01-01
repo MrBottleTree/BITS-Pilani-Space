@@ -42,7 +42,7 @@ export const add_map = async (req: Request, res: Response, next: NextFunction) =
             include: { default_elements: true }
         });
 
-        res.status(HTTP_STATUS.CREATED).json({map: map_response});
+        res.status(HTTP_STATUS.CREATED).json({ message: "Map created.", data: {map: map_response}});
         
     }
     catch {
@@ -60,7 +60,7 @@ export const get_map = async (req: Request, res: Response, next: NextFunction) =
         }
 
         const response = await client.map.findUnique({where: {id: map_id}});
-        return res.status(HTTP_STATUS.OK).json({map: response});
+        return res.status(HTTP_STATUS.OK).json({message: "ok", data: {map: response}});
     }
     catch{
         return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();

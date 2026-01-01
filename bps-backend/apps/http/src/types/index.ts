@@ -121,7 +121,7 @@ export const ImageFileSchema = z.object({
 export const AddAvatarSchema = z.object({
     name: z.string(),
     image_key: z.string()
-});
+}).strict();
 
 export const AddElementSchema = z.object({
     name: z.string(),
@@ -145,4 +145,4 @@ export const AddMapSchema = z.object({
             rotation: z.float64()
         })
     )
-});
+}).strict();
