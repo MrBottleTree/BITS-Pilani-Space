@@ -44,7 +44,7 @@ export const add_avatar = async (req: Request, res: Response, next: NextFunction
 
             res.status(HTTP_STATUS.OK).json({
                 "message": "Avatar uploaded successfully",
-                data: db_response
+                data: { avatar: db_response }
             });
 
             return;
@@ -75,11 +75,11 @@ export const get_avatar = async (req: Request, res: Response, next: NextFunction
                 id: true,
                 name: true,
                 image_key: true,
-                created_at: true,
+                updated_at: true,
                 created_by: {
                     select: {
                         id: true,
-                        username: true
+                        handle: true
                     }
                 }
             }
@@ -90,11 +90,11 @@ export const get_avatar = async (req: Request, res: Response, next: NextFunction
             return;
         }
 
-        res.status(HTTP_STATUS.OK).json({ data: avatar });
+        res.status(HTTP_STATUS.OK).json({ message: "Avatar found.", data: { avatar } });
 
     } catch (err) {
         console.error("Error fetching avatar:", err);
-        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: "Internal Server Error" });
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
     }
 };
 
