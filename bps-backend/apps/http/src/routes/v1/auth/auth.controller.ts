@@ -114,7 +114,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
         return res
             .cookie('refresh_token', refresh_token, COOKIE_OPTS)
             .status(HTTP_STATUS.OK)
-            .json({ message: "Refresh token created successfully", 
+            .json({ message: "Refresh token created.", 
                 data: { 
                     user,
                     access_token,
@@ -161,22 +161,22 @@ export const refresh_post = async (req: Request, res: Response, next: NextFuncti
 
         // if it is valid, this line is run
         const row = await client.refreshToken.findUnique({
-            where: { id: decodedRefresh.jti },
-            select: { user_id: true, revoked_at: true, token_hash: true, user: { select: { id: true, username: true, email: true, role: true } } },
+            where: { id: decodedRefresh.jti, revoked_at: null },
+            select: { user_id: true, token_hash: true, user: { select: { id: true, handle: true, email: true, role: true } } },
         });
 
-        if (!(row && row.user_id === decodedRefresh.user_id && !row.revoked_at && row.user)) return res.status(HTTP_STATUS.UNAUTHORIZED).send();
+        if (!(row && row.user_id === decodedRefresh.user_id && row.user)) return res.status(HTTP_STATUS.UNAUTHORIZED).send();
 
         // CAUGHT
         if (!fastValidate(refresh_token, row.token_hash)) return res.status(HTTP_STATUS.UNAUTHORIZED).send();
 
         const access_token = jwt.sign(
-            { user_id: row.user.id, username: row.user.username, email: row.user.email, role: row.user.role },
+            { user_id: row.user.id, handle: row.user.handle, email: row.user.email, role: row.user.role },
             JWT_SECRET,
             { expiresIn: ACCESS_EXPIRY_SEC }
         );
 
-        return res.status(HTTP_STATUS.OK).json({ access_token, expires_in: ACCESS_EXPIRY_SEC }).send();
+        return res.status(HTTP_STATUS.OK).json({ message: "Access Token refreshed.", data: { access_token, expires_in: ACCESS_EXPIRY_SEC } }).send();
     }
     catch { return res.status(HTTP_STATUS.UNAUTHORIZED).send(); };
 };
