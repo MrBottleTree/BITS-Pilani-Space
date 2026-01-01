@@ -87,8 +87,10 @@ export const checkFileExists = async (key: string): Promise<boolean> => {
 };
 
 export const generateUniqueHandle = async (): Promise<String> => {
+    // We have 426,710 unique names from this, 4*1e5 * 1e5, this will be if i follow it with a 5 digit number
+    // so 4*1e(10) which is great, it is like 40,000,000,000 or 40Billion! good ig?
     const custom_config = {
-        dictionaries: [adjectives, colors, animals],
+        dictionaries: [adjectives, animals],
         separator: '',
         style: 'capital' as const // Something like BlackCow instead of like blackcow
     }
