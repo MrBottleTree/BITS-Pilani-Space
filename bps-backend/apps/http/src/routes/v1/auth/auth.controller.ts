@@ -129,31 +129,26 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
 export const signout_post = async (req: Request, res: Response, next: NextFunction) => {
     const refresh_token = req.cookies?.refresh_token as string | undefined;
 
-    if (!refresh_token) return res.status(HTTP_STATUS.BAD_REQUEST).send();
+    if (!refresh_token) return res.status(HTTP_STATUS.NO_CONTENT).send();
 
     try {
         const decodedRefresh = jwt.verify(refresh_token, JWT_REFRESH_SECRET) as { user_id: string; jti: string };
 
-        const row = await client.refreshToken.findUnique({
-            where: { id: decodedRefresh.jti },
-            select: { id: true, user_id: true, revoked_at: true },
+        await client.refreshToken.update({
+            where: { 
+                id: decodedRefresh.jti,
+                user_id: decodedRefresh.user_id,
+                revoked_at: null 
+            },
+            data: { revoked_at: new Date() },
         });
 
-        if (row && row.user_id === decodedRefresh.user_id && !row.revoked_at) {
-
-            // invalidate the cookie on client side
-            res.clearCookie("refresh_token", { path: "/api/v1/auth" });
-
-            await client.refreshToken.update({
-                where: { id: row.id },
-                data: { revoked_at: new Date() },
-            });
-
-            return res.status(HTTP_STATUS.NO_CONTENT).send();
-        }
-        return res.status(HTTP_STATUS.UNAUTHORIZED).send();
+    } finally  {
+        return res
+            .status(HTTP_STATUS.NO_CONTENT)
+            .clearCookie("refresh_token", COOKIE_OPTS)
+            .send();
     }
-    catch { return res.status(HTTP_STATUS.UNAUTHORIZED).send(); };
 };
 
 export const refresh_post = async (req: Request, res: Response, next: NextFunction) => {
