@@ -130,7 +130,23 @@ export const AddAvatarSchema = z.object({
 export const AddElementSchema = z.object({
     name: z.string(),
     image_key: z.string(),
-    height: z.int(),
-    width: z.int(),
+    height: z.number().int(),
+    width: z.number().int(),
     static: z.boolean(),
 }).strict();
+
+export const AddMapSchema = z.object({
+    name: z.string(),
+    height: z.number().int(),
+    width: z.number().int(),
+    thumbnail_key: z.string(),
+    default_elements: z.array(
+        z.object({
+            element_id: z.string(),
+            x: z.number().int(),
+            y: z.number().int(),
+            scale: z.float64(),
+            rotation: z.float64()
+        })
+    )
+});

@@ -12,19 +12,26 @@ datasource db {
     provider = "postgresql"
 }
 
+// Helper table that keeps track of system generated handles
+model HandleSequence{
+    base_name String @id
+    count Int
+}
+
 model User {
-    id            String    @id @unique @default(cuid())
-    username      String    @unique
+    id String @id @unique @default(cuid())
+    name String
+    handle String @unique
     password_hash String
-    email         String    @unique
-    role          Role      @default(USER)
-    created_at    DateTime  @default(now())
-    updated_at    DateTime  @updatedAt
-    deleted_at    DateTime?
+    email String @unique
+    role Role @default(USER)
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+    deleted_at DateTime?
 
     // user wearing an avatar
     avatar_id String?
-    avatar    Avatar? @relation("UserWearingAvatar", fields: [avatar_id], references: [id])
+    avatar Avatar? @relation("UserWearingAvatar", fields: [avatar_id], references: [id])
 
     // user (admin) creating an avatar
     created_avatars Avatar[] @relation("AvatarCreator")
@@ -83,20 +90,20 @@ enum Role {
 }
 
 model Element {
-    id        String  @id @unique @default(cuid())
-    name      String
+    id String @id @unique @default(cuid())
+    name String
     image_key String
-    height    Int
-    width     Int
-    static    Boolean
+    height Int
+    width Int
+    static Boolean
 
     created_at DateTime @default(now())
     updated_at DateTime @updatedAt
     deleted_at DateTime?
 
     // creator of this model
-    user_id    String?
-    created_by User?   @relation("ElementCreator", fields: [user_id], references: [id], onDelete: SetNull)
+    user_id String?
+    created_by User? @relation("ElementCreator", fields: [user_id], references: [id], onDelete: SetNull)
 
     // which maps does this element are defaulted to
     default_to_maps MapElementPlacement[]
@@ -105,11 +112,11 @@ model Element {
 }
 
 model Map {
-    id  String  @id @unique @default(cuid())
-    name    String
-    height  Int
-    width   Int
-    thumbnail_key   String
+    id String  @id @unique @default(cuid())
+    name String
+    height Int
+    width Int
+    thumbnail_key String
 
     created_at DateTime @default(now())
     updated_at DateTime @updatedAt
@@ -124,7 +131,7 @@ model Map {
 }
 
 model MapElementPlacement {
-    id  String  @id @unique @default(cuid())
+    id String @id @unique @default(cuid())
 
     // the map this guy is related to
     map_id String?
@@ -137,7 +144,7 @@ model MapElementPlacement {
     x Int
     y Int
     scale Float @default(1)
-    rotation Float @default(1)
+    rotation Float @default(0)
     
     @@index([map_id])
 }

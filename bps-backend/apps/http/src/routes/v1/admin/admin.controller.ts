@@ -49,9 +49,11 @@ export const batch_delete = async (req: Request, res: Response, next: NextFuncti
 
         return res.status(HTTP_STATUS.OK).json({
             message: "Batch deletion successful",
-            requestedCount: user_ids.length,
-            deletedCount: updateResult.count,
-            deletedIds: idsToProcess
+            data: {
+                requested_count: user_ids.length,
+                deleted_count: updateResult.count,
+                deleted_ids: idsToProcess
+            }
         }).send();
 
     } catch (error) {

@@ -41,10 +41,12 @@ export const signup_post = async (req: Request, res: Response, next: NextFunctio
             select: {id: true} // only need ID, not the entire row
         });
 
-        return res.status(HTTP_STATUS.CREATED).json({ id: user.id }).send();
+        return res.status(HTTP_STATUS.CREATED).json({ message: 'User Created.', data: { id: user.id } }).send();
     }
 
     catch (error: any) {
+        console.log(error.code);
+        console.log(error.meta);
         return res.status(HTTP_STATUS.CONFLICT).json({"error": "Email or username already exists", details: error}).send(); // Conflict, probably email or username already exists
     };
 
