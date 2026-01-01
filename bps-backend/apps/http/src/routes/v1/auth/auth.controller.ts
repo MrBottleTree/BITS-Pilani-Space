@@ -69,18 +69,18 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
 
     try {
         const user = await client.user.findUnique({
-            where: identifier.includes('@') ? { email: identifier, deleted_at: null } : { username: identifier, deleted_at: null },
-            select: { id: true, username: true, password_hash: true, email: true, role: true }
+            where: identifier.includes('@') ? { email: identifier, deleted_at: null } : { handle: identifier, deleted_at: null },
+            select: { id: true, handle: true, password_hash: true, email: true, role: true }
         });
 
         // user not there in our db
-        if (!user) return res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: "Invalid credentials", details: "User not found in the database" }).send();
+        if (!user) return res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: "Invalid credentials" }).send();
 
         // Low entropy, hence the argon2
         const passwordValid = await slowVerify(user.password_hash, password);
 
         // wrong password given by user
-        if (!passwordValid) return res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: "Invalid credentials", details: "Password does not match" }).send();
+        if (!passwordValid) return res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: "Invalid credentials" }).send();
 
         // Make ID for refresh token
         const jti = createId();
@@ -95,7 +95,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
         const token_hash = fastHashToken(refresh_token);
 
         const access_token = jwt.sign(
-            { user_id: user.id, username: user.username, email: user.email, role: user.role },
+            { user_id: user.id, handle: user.handle, email: user.email, role: user.role },
             JWT_SECRET,
             { expiresIn: ACCESS_EXPIRY_SEC }
         )
@@ -103,7 +103,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
         await client.refreshToken.create({
             data: {
                 id: jti, // Use our own ID
-                user_id: user.id,
+                user: { connect: { id: user.id } },
                 token_hash,
                 expires_at: new Date(Date.now() + REFRESH_EXPIRY_MS),
                 user_agent: req.headers["user-agent"] || ""
@@ -114,7 +114,13 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
         return res
             .cookie('refresh_token', refresh_token, COOKIE_OPTS)
             .status(HTTP_STATUS.OK)
-            .json({ id: user.id, role: user.role, access_token: access_token, expires_in: ACCESS_EXPIRY_SEC});
+            .json({ message: "Refresh token created successfully", 
+                data: { 
+                    user,
+                    access_token,
+                    expires_in: ACCESS_EXPIRY_SEC 
+                } 
+            });
     }
     catch (error) { next(error); };
 
