@@ -61,7 +61,7 @@ export const SigninSchema = z.object({
 
 export const UserSchema = z.object({
     user_id: z.string(),
-    username: z.string(),
+    handle: z.string(),
     email: z.email(),
     role: RoleSchema
 });
