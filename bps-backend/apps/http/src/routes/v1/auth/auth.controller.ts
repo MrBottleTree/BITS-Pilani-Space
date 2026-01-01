@@ -50,6 +50,7 @@ export const signup_post = async (req: Request, res: Response, next: NextFunctio
     }
 
     catch (error: any) {
+        console.log(error);
         if(error.status == ERROR_DATABASE_DATA_CONFLICT){
             return res.status(HTTP_STATUS.CONFLICT).json({"error": "Email registered"}).send();
         }
@@ -116,7 +117,11 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
             .status(HTTP_STATUS.OK)
             .json({ message: "Refresh token created.", 
                 data: { 
-                    user,
+                    user: {
+                        id: user.id,
+                        handle: user.handle,
+                        email: user.email,
+                    }
                     access_token,
                     expires_in: ACCESS_EXPIRY_SEC 
                 } 
