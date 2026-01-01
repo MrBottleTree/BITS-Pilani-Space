@@ -60,7 +60,7 @@ export const get_all_elements = async (req: Request, res: Response, next: NextFu
             }
         });
 
-        res.status(HTTP_STATUS.OK).json({elements: db_resp});
+        res.status(HTTP_STATUS.OK).json({message: "ok", data: {elements: db_resp}});
     }
     catch{
         res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
