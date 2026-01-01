@@ -121,7 +121,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
                         id: user.id,
                         handle: user.handle,
                         email: user.email,
-                    }
+                    },
                     access_token,
                     expires_in: ACCESS_EXPIRY_SEC 
                 } 
