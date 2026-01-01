@@ -106,15 +106,14 @@ export const get_all_avatar = async (req: Request, res: Response, next: NextFunc
         });
 
         res.status(HTTP_STATUS.OK).json({
-            count: avatars.length,
-            avatars
+            message: "ok",
+            data: {avatars, count: avatars.length}
         });
         return
     }
 
     catch{
         res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
-
         return
     }
 };
