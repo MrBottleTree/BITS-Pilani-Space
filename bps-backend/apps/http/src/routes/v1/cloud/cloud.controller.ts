@@ -41,7 +41,10 @@ export const upload_image = async (req: Request, res: Response, next: NextFuncti
     const [s3_upload] = await Promise.allSettled([uploadFile(key, actual_file.data.buffer, actual_file.data.mimetype)]);
 
     if(s3_upload.status === 'fulfilled'){
-        res.status(HTTP_STATUS.OK).json({key});
+        res.status(HTTP_STATUS.OK).json({
+            message: "Uploaded to cloud.",
+            data: { key }
+        });
         return
     }
 

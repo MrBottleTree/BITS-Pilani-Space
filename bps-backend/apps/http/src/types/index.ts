@@ -30,12 +30,11 @@ export const PasswordSchema = z
     });
 
 export const SignupSchema = z.object({
-    username: z
+    name: z
         .string()
-        .trim()
-        .min(3, "Username must be at least 3 characters")
-        .max(32, "Username must be at most 32 characters")
-        .regex(/^[a-zA-Z0-9_]+$/, "Username may contain only letters, digits, and underscore"), // Violation of this should be shown to the user as well
+        .min(3, "Name must be at least 3 characters")
+        .max(32, "Name must be at most 32 characters")
+        .regex(/^[a-zA-Z0-9_ ]+$/, "Name may contain only letters, digits, underscore and white space"),
 
     email: z
         .email("Invalid email address")
@@ -44,7 +43,7 @@ export const SignupSchema = z.object({
         .transform(v => v.toLowerCase()),
 
     password: PasswordSchema,
-    role: RoleSchema
+    role: RoleSchema.optional()
 }).strict();
 
 export const SigninSchema = z.object({
@@ -58,14 +57,14 @@ export const SigninSchema = z.object({
         .string()
         .min(1, "Password is required")
         .max(128, "Password too long"),
-});
+}).strict();
 
 export const UserSchema = z.object({
     user_id: z.string(),
-    username: z.string(),
+    handle: z.string(),
     email: z.email(),
     role: RoleSchema
-});
+}).strict();
 
 export const AuthorizationHeaderSchema = z.object({
   authorization: z
@@ -75,24 +74,25 @@ export const AuthorizationHeaderSchema = z.object({
 });
 
 export const BatchUserDeletionSchema = z.object({
-  user_ids: z
-    .array(z.string().min(1, "ID cannot be empty"))
-    .min(1, "At least one ID is required")
-    .max(1000, "Cannot delete more than 1000 users at once")
+  user_ids: z.array(z.string())
 });
 
 export const UpdateUserSchema = z.object({
-    id: z.string().optional(),
-
     password: z.string().min(1, { message: "Current password is required" }),
 
     user: z.object({
-        new_username: z
+        new_name: z
+            .string()
+            .min(3, "Name must be at least 3 characters")
+            .max(32, "Name must be at most 32 characters")
+            .regex(/^[a-zA-Z0-9_ ]+$/, "Name may contain only letters, digits, underscore and white space"),
+
+        new_handle: z
             .string()
             .trim()
             .min(3, "Username must be at least 3 characters")
             .max(32, "Username must be at most 32 characters")
-            .regex(/^[a-zA-Z0-9_]+$/, "Username may contain only letters, digits, and underscore"),
+            .regex(/^[a-zA-Z0-9_]+$/, "Handle may contain only letters, digits, and underscore"),
 
         new_email: z
             .email("Invalid email address")
@@ -125,10 +125,28 @@ export const ImageFileSchema = z.object({
 export const AddAvatarSchema = z.object({
     name: z.string(),
     image_key: z.string()
-});
+}).strict();
 
 export const AddElementSchema = z.object({
     name: z.string(),
     image_key: z.string(),
+    height: z.number().int(),
+    width: z.number().int(),
     static: z.boolean(),
+}).strict();
+
+export const AddMapSchema = z.object({
+    name: z.string(),
+    height: z.number().int(),
+    width: z.number().int(),
+    thumbnail_key: z.string(),
+    default_elements: z.array(
+        z.object({
+            element_id: z.string(),
+            x: z.number().int(),
+            y: z.number().int(),
+            scale: z.float64(),
+            rotation: z.float64()
+        })
+    )
 }).strict();

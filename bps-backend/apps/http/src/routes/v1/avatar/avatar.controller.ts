@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { HTTP_STATUS } from "../../../config.js";
+import { ERROR_DATABASE_DATA_CONFLICT, HTTP_STATUS } from "../../../config.js";
 import * as Types from "../../../types/index.js"
 import { checkFileExists, deleteFile, get_parsed_error_message, uploadFile } from "../utils/helper.js";
 import { client } from "@repo/db";
@@ -44,16 +44,14 @@ export const add_avatar = async (req: Request, res: Response, next: NextFunction
 
             res.status(HTTP_STATUS.OK).json({
                 "message": "Avatar uploaded successfully",
-                avatar: db_response
+                data: { avatar: db_response }
             });
 
             return;
         }
-        catch(err) {
-            // unique constraint mostly, FUTURE WORK to check the exact error
-            console.log(err);
-            res.status(HTTP_STATUS.CONFLICT).json({"error": "Avatar with exact key exists"});
-            return;
+        catch(err: any) {
+            if(err.status == ERROR_DATABASE_DATA_CONFLICT) return res.status(HTTP_STATUS.CONFLICT).json({"error": "Avatar with exact key exists"});
+            return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
         }
     }
     catch {
@@ -77,11 +75,11 @@ export const get_avatar = async (req: Request, res: Response, next: NextFunction
                 id: true,
                 name: true,
                 image_key: true,
-                created_at: true,
+                updated_at: true,
                 created_by: {
                     select: {
                         id: true,
-                        username: true
+                        handle: true
                     }
                 }
             }
@@ -92,11 +90,11 @@ export const get_avatar = async (req: Request, res: Response, next: NextFunction
             return;
         }
 
-        res.status(HTTP_STATUS.OK).json({ data: avatar });
+        res.status(HTTP_STATUS.OK).json({ message: "Avatar found.", data: { avatar } });
 
     } catch (err) {
         console.error("Error fetching avatar:", err);
-        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: "Internal Server Error" });
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
     }
 };
 
@@ -108,15 +106,14 @@ export const get_all_avatar = async (req: Request, res: Response, next: NextFunc
         });
 
         res.status(HTTP_STATUS.OK).json({
-            count: avatars.length,
-            avatars
+            message: "ok",
+            data: {avatars, count: avatars.length}
         });
         return
     }
 
     catch{
         res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
-
         return
     }
 };

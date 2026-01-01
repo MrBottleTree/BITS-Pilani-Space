@@ -71,21 +71,16 @@ export const strong_middleware = (request_role: string) => {
             return REQUEST_HANDLED;
         }
 
-        const incoming_user_id = req.body.id;
         const incoming_password = req.body.password;
 
-        if(!incoming_password || !incoming_user_id) {
-            res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "user_id or password not given"}).send();
+        if(!incoming_password) {
+            res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "Password not found in body."}).send();
             return REQUEST_HANDLED;
         }
 
-        if(user.user_id !== incoming_user_id) {
-            res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "user_id in the body does not match the access token user id"}).send();
-            return REQUEST_HANDLED;
-        }
         try{
             const stored_user = await client.user.findUnique({
-                where: { id: incoming_user_id },
+                where: { id: user.user_id, deleted_at: null },
                 select: { id: true, role: true, password_hash: true, deleted_at: true}
             });
 

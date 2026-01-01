@@ -3,8 +3,8 @@ import { client } from "@repo/db/client";
 import jwt from "jsonwebtoken";
 import { createId } from "@paralleldrive/cuid2";
 import * as Types from "../../../types/index.js";
-import { JWT_REFRESH_SECRET, JWT_SECRET, HTTP_STATUS } from "../../../config.js";
-import { fastHashToken, fastValidate, get_parsed_error_message, slowHash, slowVerify } from "../utils/helper.js";
+import { JWT_REFRESH_SECRET, JWT_SECRET, HTTP_STATUS, ERROR_DATABASE_DATA_CONFLICT } from "../../../config.js";
+import { fastHashToken, fastValidate, generateUniqueHandle, get_parsed_error_message, slowHash, slowVerify } from "../utils/helper.js";
 
 
 const REFRESH_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 Days
@@ -18,61 +18,70 @@ const COOKIE_OPTS = {
 
 export const signup_post = async (req: Request, res: Response, next: NextFunction) => {
     // Clean and get what you need from the input
-    const parsedBody = Types.SignupSchema.safeParse(req.body);
+    const parsed_body = Types.SignupSchema.safeParse(req.body);
 
-    if (!parsedBody.success) {
+    if (!parsed_body.success) {
         return res.status(HTTP_STATUS.BAD_REQUEST).json({
             error: "Invalid signup data",
-            details: get_parsed_error_message(parsedBody)
+            details: get_parsed_error_message(parsed_body)
         }).send();
     }
 
     try {
         // Extremly slow CPU intensive hashing algo (for low entropy guys)
-        const hashed_password = await slowHash(parsedBody.data.password);
+        const hashed_password_promise = slowHash(parsed_body.data.password);
+
+        const handle_promise = generateUniqueHandle();
+
+        const [hashed_password, unique_handle] = await Promise.all([hashed_password_promise, handle_promise]);
+
+        const user_data: any = {};
+        user_data.email = parsed_body.data.email;
+        user_data.name = parsed_body.data.name;
+        user_data.password_hash = hashed_password;
+        if(unique_handle) user_data.handle = unique_handle;
 
         const user = await client.user.create({
-            data: {
-                email: parsedBody.data.email,
-                password_hash: hashed_password,
-                username: parsedBody.data.username,
-                role: parsedBody.data.role == "ADMIN"? "ADMIN": "USER" //safer this way
-            },
-            select: {id: true} // only need ID, not the entire row
+            data: user_data,
+            select: {id: true, handle: true} // only need ID, not the entire row
         });
 
-        return res.status(HTTP_STATUS.CREATED).json({ id: user.id }).send();
+        return res.status(HTTP_STATUS.CREATED).json({ message: 'User Created.', data: user }).send();
     }
 
     catch (error: any) {
-        return res.status(HTTP_STATUS.CONFLICT).json({"error": "Email or username already exists", details: error}).send(); // Conflict, probably email or username already exists
+        console.log(error);
+        if(error.status == ERROR_DATABASE_DATA_CONFLICT){
+            return res.status(HTTP_STATUS.CONFLICT).json({"error": "Email registered"}).send();
+        }
+        return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
     };
 
 };
 
 export const signin_post = async (req: Request, res: Response, next: NextFunction) => {
-    const parsedBody = Types.SigninSchema.safeParse(req.body);
+    const parsed_body = Types.SigninSchema.safeParse(req.body);
 
     // not clean data
-    if (!parsedBody.success) return res.status(HTTP_STATUS.BAD_REQUEST).json({error: "Invalid signin data", details: get_parsed_error_message(parsedBody)}).send();
+    if (!parsed_body.success) return res.status(HTTP_STATUS.BAD_REQUEST).json({error: "Invalid signin data", details: get_parsed_error_message(parsed_body)}).send();
     
-    const identifier = parsedBody.data.identifier;
-    const password = parsedBody.data.password;
+    const identifier = parsed_body.data.identifier;
+    const password = parsed_body.data.password;
 
     try {
         const user = await client.user.findUnique({
-            where: identifier.includes('@') ? { email: identifier, deleted_at: null } : { username: identifier, deleted_at: null },
-            select: { id: true, username: true, password_hash: true, email: true, role: true }
+            where: identifier.includes('@') ? { email: identifier, deleted_at: null } : { handle: identifier, deleted_at: null },
+            select: { id: true, handle: true, password_hash: true, email: true, role: true }
         });
 
         // user not there in our db
-        if (!user) return res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: "Invalid credentials", details: "User not found in the database" }).send();
+        if (!user) return res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: "Invalid credentials" }).send();
 
         // Low entropy, hence the argon2
         const passwordValid = await slowVerify(user.password_hash, password);
 
         // wrong password given by user
-        if (!passwordValid) return res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: "Invalid credentials", details: "Password does not match" }).send();
+        if (!passwordValid) return res.status(HTTP_STATUS.UNAUTHORIZED).json({ error: "Invalid credentials" }).send();
 
         // Make ID for refresh token
         const jti = createId();
@@ -87,7 +96,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
         const token_hash = fastHashToken(refresh_token);
 
         const access_token = jwt.sign(
-            { user_id: user.id, username: user.username, email: user.email, role: user.role },
+            { user_id: user.id, handle: user.handle, email: user.email, role: user.role },
             JWT_SECRET,
             { expiresIn: ACCESS_EXPIRY_SEC }
         )
@@ -95,7 +104,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
         await client.refreshToken.create({
             data: {
                 id: jti, // Use our own ID
-                user_id: user.id,
+                user: { connect: { id: user.id } },
                 token_hash,
                 expires_at: new Date(Date.now() + REFRESH_EXPIRY_MS),
                 user_agent: req.headers["user-agent"] || ""
@@ -106,7 +115,18 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
         return res
             .cookie('refresh_token', refresh_token, COOKIE_OPTS)
             .status(HTTP_STATUS.OK)
-            .json({ id: user.id, role: user.role, access_token: access_token, expires_in: ACCESS_EXPIRY_SEC});
+            .json({ message: "Refresh token created.", 
+                data: { 
+                    user: {
+                        id: user.id,
+                        handle: user.handle,
+                        email: user.email,
+                        role: user.role
+                    },
+                    access_token,
+                    expires_in: ACCESS_EXPIRY_SEC 
+                } 
+            });
     }
     catch (error) { next(error); };
 
@@ -115,31 +135,26 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
 export const signout_post = async (req: Request, res: Response, next: NextFunction) => {
     const refresh_token = req.cookies?.refresh_token as string | undefined;
 
-    if (!refresh_token) return res.status(HTTP_STATUS.BAD_REQUEST).send();
+    if (!refresh_token) return res.status(HTTP_STATUS.NO_CONTENT).send();
 
     try {
         const decodedRefresh = jwt.verify(refresh_token, JWT_REFRESH_SECRET) as { user_id: string; jti: string };
 
-        const row = await client.refreshToken.findUnique({
-            where: { id: decodedRefresh.jti },
-            select: { id: true, user_id: true, revoked_at: true },
+        await client.refreshToken.update({
+            where: { 
+                id: decodedRefresh.jti,
+                user_id: decodedRefresh.user_id,
+                revoked_at: null 
+            },
+            data: { revoked_at: new Date() },
         });
 
-        if (row && row.user_id === decodedRefresh.user_id && !row.revoked_at) {
-
-            // invalidate the cookie on client side
-            res.clearCookie("refresh_token", { path: "/api/v1/auth" });
-
-            await client.refreshToken.update({
-                where: { id: row.id },
-                data: { revoked_at: new Date() },
-            });
-
-            return res.status(HTTP_STATUS.NO_CONTENT).send();
-        }
-        return res.status(HTTP_STATUS.UNAUTHORIZED).send();
+    } finally  {
+        return res
+            .status(HTTP_STATUS.NO_CONTENT)
+            .clearCookie("refresh_token", COOKIE_OPTS)
+            .send();
     }
-    catch { return res.status(HTTP_STATUS.UNAUTHORIZED).send(); };
 };
 
 export const refresh_post = async (req: Request, res: Response, next: NextFunction) => {
@@ -152,22 +167,22 @@ export const refresh_post = async (req: Request, res: Response, next: NextFuncti
 
         // if it is valid, this line is run
         const row = await client.refreshToken.findUnique({
-            where: { id: decodedRefresh.jti },
-            select: { user_id: true, revoked_at: true, token_hash: true, user: { select: { id: true, username: true, email: true, role: true } } },
+            where: { id: decodedRefresh.jti, revoked_at: null },
+            select: { user_id: true, token_hash: true, user: { select: { id: true, handle: true, email: true, role: true } } },
         });
 
-        if (!(row && row.user_id === decodedRefresh.user_id && !row.revoked_at && row.user)) return res.status(HTTP_STATUS.UNAUTHORIZED).send();
+        if (!(row && row.user_id === decodedRefresh.user_id && row.user)) return res.status(HTTP_STATUS.UNAUTHORIZED).send();
 
         // CAUGHT
         if (!fastValidate(refresh_token, row.token_hash)) return res.status(HTTP_STATUS.UNAUTHORIZED).send();
 
         const access_token = jwt.sign(
-            { user_id: row.user.id, username: row.user.username, email: row.user.email, role: row.user.role },
+            { user_id: row.user.id, handle: row.user.handle, email: row.user.email, role: row.user.role },
             JWT_SECRET,
             { expiresIn: ACCESS_EXPIRY_SEC }
         );
 
-        return res.status(HTTP_STATUS.OK).json({ access_token, expires_in: ACCESS_EXPIRY_SEC }).send();
+        return res.status(HTTP_STATUS.OK).json({ message: "Access Token refreshed.", data: { access_token, expires_in: ACCESS_EXPIRY_SEC } }).send();
     }
     catch { return res.status(HTTP_STATUS.UNAUTHORIZED).send(); };
 };

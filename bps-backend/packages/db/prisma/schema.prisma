@@ -12,28 +12,43 @@ datasource db {
     provider = "postgresql"
 }
 
+// Helper table that keeps track of system generated handles
+model HandleSequence{
+    base_name String @id
+    count Int
+}
+
 model User {
-    id            String    @id @unique @default(cuid())
-    username      String    @unique
+    id String @id @unique @default(cuid())
+    name String
+
+    // Rarely the handle becomes a CUID()
+    handle String @unique @default(cuid())
     password_hash String
-    email         String    @unique
-    role          Role      @default(USER)
-    created_at    DateTime  @default(now())
-    updated_at    DateTime  @updatedAt
-    deleted_at    DateTime?
+    email String @unique
+    role Role @default(USER)
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+    deleted_at DateTime?
 
     // user wearing an avatar
     avatar_id String?
-    avatar    Avatar? @relation("UserWearingAvatar", fields: [avatar_id], references: [id])
+    avatar Avatar? @relation("UserWearingAvatar", fields: [avatar_id], references: [id])
 
     // user (admin) creating an avatar
     created_avatars Avatar[] @relation("AvatarCreator")
 
-    refresh_tokens RefreshToken[]
+    // All the tokens created by the user
+    refresh_tokens RefreshToken[] @relation("DevicesSignedIn")
 
+    // Elements created by admin
     elements Element[] @relation("ElementCreator")
 
+    // Maps created by admin
+    maps Map[] @relation("MapCreator")
+
     @@index([role, deleted_at])
+    @@index([handle])
 }
 
 model RefreshToken {
@@ -48,7 +63,7 @@ model RefreshToken {
     last_used_at DateTime  @updatedAt
     user_agent   String?
 
-    user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+    user User? @relation("DevicesSignedIn", fields: [user_id], references: [id], onDelete: SetNull)
 
     @@index([user_id])
     @@index([expires_at])
@@ -78,17 +93,61 @@ enum Role {
 }
 
 model Element {
-    id        String  @id @unique @default(cuid())
-    name      String
+    id String @id @unique @default(cuid())
+    name String
     image_key String
-    static    Boolean
+    height Int
+    width Int
+    static Boolean
 
     created_at DateTime @default(now())
     updated_at DateTime @updatedAt
     deleted_at DateTime?
 
-    user_id    String?
-    created_by User?   @relation("ElementCreator", fields: [user_id], references: [id], onDelete: SetNull)
+    // creator of this model
+    user_id String?
+    created_by User? @relation("ElementCreator", fields: [user_id], references: [id], onDelete: SetNull)
+
+    // which maps does this element are defaulted to
+    default_to_maps MapElementPlacement[]
 
     @@unique([image_key, static])
+}
+
+model Map {
+    id String  @id @unique @default(cuid())
+    name String
+    height Int
+    width Int
+    thumbnail_key String
+
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+    deleted_at DateTime?
+
+    // Who created me bRO?
+    user_id String?
+    created_by User? @relation("MapCreator", fields: [user_id], references: [id], onDelete: SetNull)
+
+    // elements in this map
+    default_elements MapElementPlacement[]
+}
+
+model MapElementPlacement {
+    id String @id @unique @default(cuid())
+
+    // the map this guy is related to
+    map_id String?
+    map Map? @relation(fields: [map_id], references: [id], onDelete: SetNull)
+
+    // the element on this map
+    element_id String?
+    element Element? @relation(fields: [element_id], references: [id], onDelete: SetNull)
+
+    x Int
+    y Int
+    scale Float @default(1)
+    rotation Float @default(0)
+    
+    @@index([map_id])
 }

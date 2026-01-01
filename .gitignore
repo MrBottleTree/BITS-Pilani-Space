@@ -14,3 +14,5 @@ yarn-error.log*
 # vs code
 .vscode/
 minio_data/
+
+*.ipynb
