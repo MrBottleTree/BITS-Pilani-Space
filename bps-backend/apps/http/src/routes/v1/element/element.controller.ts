@@ -24,11 +24,13 @@ export const add_element = async (req: Request, res: Response, next: NextFunctio
                 name: parsed_body.data.name,
                 image_key: parsed_body.data.image_key,
                 static: parsed_body.data.static,
+                height: parsed_body.data.height,
+                width: parsed_body.data.width,
                 created_by: {
                     connect: { id: current_user.user_id }
                 }
             },
-            select: { id: true }
+            select: { id: true, name: true, image_key: true, height: true, width: true, static: true, updated_at: true }
         });
 
         if(!db_resp){
@@ -36,7 +38,7 @@ export const add_element = async (req: Request, res: Response, next: NextFunctio
             return;
         }
 
-        res.status(HTTP_STATUS.CREATED).json({element: db_resp});
+        res.status(HTTP_STATUS.CREATED).json({message: "Element created.", data: {element: db_resp}});
     }
     catch {
         res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
