@@ -28,3 +28,5 @@ declare global {
 
 export const REQUEST_HANDLED = false;
 export const REQUEST_NOTHANDLED = true;
+export const NUM_ATTEMPTS_HANDLE_GENERATION = 10;
+export const ERROR_DATABASE_DATA_CONFLICT = 'P2002';

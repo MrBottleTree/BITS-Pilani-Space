@@ -21,7 +21,9 @@ model HandleSequence{
 model User {
     id String @id @unique @default(cuid())
     name String
-    handle String @unique
+
+    // Rarely the handle becomes a CUID()
+    handle String @unique @default(cuid())
     password_hash String
     email String @unique
     role Role @default(USER)
@@ -46,6 +48,7 @@ model User {
     maps Map[] @relation("MapCreator")
 
     @@index([role, deleted_at])
+    @@index([handle])
 }
 
 model RefreshToken {

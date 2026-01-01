@@ -3,8 +3,8 @@ import { client } from "@repo/db/client";
 import jwt from "jsonwebtoken";
 import { createId } from "@paralleldrive/cuid2";
 import * as Types from "../../../types/index.js";
-import { JWT_REFRESH_SECRET, JWT_SECRET, HTTP_STATUS } from "../../../config.js";
-import { fastHashToken, fastValidate, get_parsed_error_message, slowHash, slowVerify } from "../utils/helper.js";
+import { JWT_REFRESH_SECRET, JWT_SECRET, HTTP_STATUS, ERROR_DATABASE_DATA_CONFLICT } from "../../../config.js";
+import { fastHashToken, fastValidate, generateUniqueHandle, get_parsed_error_message, slowHash, slowVerify } from "../utils/helper.js";
 
 
 const REFRESH_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 Days
@@ -18,48 +18,54 @@ const COOKIE_OPTS = {
 
 export const signup_post = async (req: Request, res: Response, next: NextFunction) => {
     // Clean and get what you need from the input
-    const parsedBody = Types.SignupSchema.safeParse(req.body);
+    const parsed_body = Types.SignupSchema.safeParse(req.body);
 
-    if (!parsedBody.success) {
+    if (!parsed_body.success) {
         return res.status(HTTP_STATUS.BAD_REQUEST).json({
             error: "Invalid signup data",
-            details: get_parsed_error_message(parsedBody)
+            details: get_parsed_error_message(parsed_body)
         }).send();
     }
 
     try {
         // Extremly slow CPU intensive hashing algo (for low entropy guys)
-        const hashed_password = await slowHash(parsedBody.data.password);
+        const hashed_password_promise = slowHash(parsed_body.data.password);
+
+        const handle_promise = generateUniqueHandle();
+
+        const [hashed_password, unique_handle] = await Promise.all([hashed_password_promise, handle_promise]);
+
+        const user_data: any = {};
+        user_data.email = parsed_body.data.email;
+        user_data.name = parsed_body.data.name;
+        user_data.password_hash = hashed_password;
+        if(unique_handle) user_data.handle = unique_handle;
 
         const user = await client.user.create({
-            data: {
-                email: parsedBody.data.email,
-                password_hash: hashed_password,
-                username: parsedBody.data.username,
-                role: parsedBody.data.role == "ADMIN"? "ADMIN": "USER" //safer this way
-            },
-            select: {id: true} // only need ID, not the entire row
+            data: user_data,
+            select: {id: true, handle: true} // only need ID, not the entire row
         });
 
-        return res.status(HTTP_STATUS.CREATED).json({ message: 'User Created.', data: { id: user.id } }).send();
+        return res.status(HTTP_STATUS.CREATED).json({ message: 'User Created.', data: user }).send();
     }
 
     catch (error: any) {
-        console.log(error.code);
-        console.log(error.meta);
-        return res.status(HTTP_STATUS.CONFLICT).json({"error": "Email or username already exists", details: error}).send(); // Conflict, probably email or username already exists
+        if(error.status == ERROR_DATABASE_DATA_CONFLICT){
+            return res.status(HTTP_STATUS.CONFLICT).json({"error": "Email registered"}).send();
+        }
+        return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
     };
 
 };
 
 export const signin_post = async (req: Request, res: Response, next: NextFunction) => {
-    const parsedBody = Types.SigninSchema.safeParse(req.body);
+    const parsed_body = Types.SigninSchema.safeParse(req.body);
 
     // not clean data
-    if (!parsedBody.success) return res.status(HTTP_STATUS.BAD_REQUEST).json({error: "Invalid signin data", details: get_parsed_error_message(parsedBody)}).send();
+    if (!parsed_body.success) return res.status(HTTP_STATUS.BAD_REQUEST).json({error: "Invalid signin data", details: get_parsed_error_message(parsed_body)}).send();
     
-    const identifier = parsedBody.data.identifier;
-    const password = parsedBody.data.password;
+    const identifier = parsed_body.data.identifier;
+    const password = parsed_body.data.password;
 
     try {
         const user = await client.user.findUnique({

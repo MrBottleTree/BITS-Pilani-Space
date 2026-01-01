@@ -2,7 +2,9 @@ import { z } from "zod";
 import crypto from "crypto";
 import argon2 from "argon2";
 import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
-
+import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator';
+import { NUM_ATTEMPTS_HANDLE_GENERATION } from "../../../config.js";
+import { client } from "@repo/db";
 const isLocal = process.env.NODE_ENV !== "production";
 
 export function get_parsed_error_message(result: z.ZodSafeParseError<any>) {
@@ -82,4 +84,47 @@ export const checkFileExists = async (key: string): Promise<boolean> => {
         console.error("Error checking S3 file existence:", error);
         throw error;
     }
+};
+
+export const generateUniqueHandle = async (): Promise<String> => {
+    const custom_config = {
+        dictionaries: [adjectives, colors, animals],
+        separator: '',
+        style: 'capital' as const // Something like BlackCow instead of like blackcow
+    }
+
+    let isUnique = false;
+    let finalHandle = '';
+    let attempts = 0;
+
+    while(!isUnique && attempts < NUM_ATTEMPTS_HANDLE_GENERATION){
+        attempts++;
+
+        // Get a new base handle
+        const base_handle = uniqueNamesGenerator(custom_config);
+
+        const sequence = await client.handleSequence.upsert({
+            where: { base_name: base_handle },
+            update: { count: { increment: 1 } },
+            create: { base_name: base_handle, count: 1 }
+        });
+
+        const potential_handle = sequence.count === 1? base_handle: `${base_handle}${sequence.count-1}`;
+
+        const existing_user = await client.user.findUnique({
+            where: { handle: potential_handle },
+            select: { id: true }
+        });
+
+        if(!existing_user){
+            finalHandle = potential_handle;
+            isUnique = true;
+        }
+    }
+
+    if(!isUnique){
+        return "";
+    }
+    
+    return finalHandle;
 };
