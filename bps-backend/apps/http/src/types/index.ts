@@ -74,10 +74,7 @@ export const AuthorizationHeaderSchema = z.object({
 });
 
 export const BatchUserDeletionSchema = z.object({
-  user_ids: z
-    .array(z.string().min(1, "ID cannot be empty"))
-    .min(1, "At least one ID is required")
-    .max(1000, "Cannot delete more than 1000 users at once")
+  user_ids: z.array(z.string())
 });
 
 export const UpdateUserSchema = z.object({

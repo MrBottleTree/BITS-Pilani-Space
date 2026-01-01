@@ -13,7 +13,11 @@ export const batch_delete = async (req: Request, res: Response, next: NextFuncti
 
     const user_ids = parsed_body.data?.user_ids;
 
-    if(!user_ids) return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "no user IDs found in body"}).send();
+    if(!user_ids) return res.status(HTTP_STATUS.OK).json({message: "No users deleted.", data: {
+        requested_count: 0,
+        deleted_count: 0,
+        deleted_ids: [],
+    }}).send();
 
     try {
         const eligibleUsers = await client.user.findMany({
@@ -25,19 +29,22 @@ export const batch_delete = async (req: Request, res: Response, next: NextFuncti
             select: { id: true }
         });
 
-        const idsToProcess = eligibleUsers.map(user => user.id);
+        const ids_to_process = eligibleUsers.map(user => user.id);
 
-        if (idsToProcess.length === 0) {
+        if (ids_to_process.length === 0) {
             return res.status(HTTP_STATUS.OK).json({
                 message: "No eligible users were found for deletion.",
-                deletedCount: 0,
-                deletedIds: []
+                data: {
+                    requested_count: user_ids.length,
+                    deleted_count: 0,
+                    deleted_ids: []
+                }
             }).send();
         }
 
         const updateResult = await client.user.updateMany({
             where: {
-                id: { in: idsToProcess }
+                id: { in: ids_to_process }
             },
             data: {
                 deleted_at: new Date()
@@ -45,14 +52,14 @@ export const batch_delete = async (req: Request, res: Response, next: NextFuncti
         });
         
         // race condition may occur
-        // if(updateResult.count !== idsToProcess.length) return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({"error": "error in deleting multiple users"}).send();
+        // if(updateResult.count !== ids_to_process.length) return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({"error": "error in deleting multiple users"}).send();
 
         return res.status(HTTP_STATUS.OK).json({
             message: "Batch deletion successful",
             data: {
                 requested_count: user_ids.length,
                 deleted_count: updateResult.count,
-                deleted_ids: idsToProcess
+                deleted_ids: ids_to_process
             }
         }).send();
 
