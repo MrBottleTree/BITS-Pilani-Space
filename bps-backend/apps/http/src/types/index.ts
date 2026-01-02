@@ -160,3 +160,18 @@ export const AddSpaceSchema = z.object({
     name: z.string(),
     map_id: z.string(),
 }).strict();
+
+export const AddElementToSpaceSchema = z.object({
+    space_id: z.string(),
+    element: z.object({
+        element_id: z.string(),
+        x: z.number().int(),
+        y: z.number().int(),
+        scale: z.float64(),
+        rotation: z.float64(),
+    })
+}).strict();
+
+export const DeleteElementFromSpaceSchema = z.object({
+    added_element_id: z.string()
+}).strict();
