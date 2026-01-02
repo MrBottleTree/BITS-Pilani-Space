@@ -5,7 +5,7 @@ axios.defaults.validateStatus = () => true;
 
 const API_VERSION = 'v1';
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://192.168.31.193:3000";
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3000";
 
 function makeUniqueUsername(prefix = "test") {
     const safePrefix = String(prefix).replace(/[^a-zA-Z0-9_]/g, "_").slice(0, 8) || "test";
@@ -96,6 +96,19 @@ async function get_avatar(token, avatar_id) {
     return await axios.get(`${BACKEND_URL}/api/${API_VERSION}/avatar/${avatar_id}`);
 }
 
+const HTTP_STATUS = {
+    OK: 200,
+    CREATED: 201,
+    NO_CONTENT: 204,
+    BAD_REQUEST: 400,
+    UNAUTHORIZED: 401,
+    FORBIDDEN: 403,
+    NOT_FOUND: 404,
+    CONFLICT: 409,
+    UNPROCESSABLE_ENTITY: 422,
+    INTERNAL_SERVER_ERROR: 500,
+};
+
 module.exports = {
   axios,
   API_VERSION,
@@ -110,5 +123,6 @@ module.exports = {
   update_user,
   get_me,
   upload_avatar,
-  get_avatar
+  get_avatar,
+  HTTP_STATUS
 };

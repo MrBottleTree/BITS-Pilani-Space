@@ -34,14 +34,14 @@ The frontend **collects the user's information**, sends it to the backend, and t
 ## **What the backend expects**
 
 The backend expects:
-- **email** or **username** (string) field name -> **identifier**
+- **email** or **handle** (string) field name -> **identifier**
 - **password** (string)
 
 
 Example request body:
 ```json
 {
-  "identifier": "user@example.com" or "username",
+  "identifier": "user@example.com" or "handle",
   "password": "StrongPassword123",
 }
 
