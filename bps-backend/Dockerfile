@@ -6,9 +6,13 @@ RUN npm install -g pnpm
 
 WORKDIR /app
 
+COPY pnpm-lock.yaml ./
+
+RUN pnpm fetch
+
 COPY . .
 
-RUN pnpm install
+RUN pnpm install --recursive --offline --frozen-lockfile
 
 RUN cd packages/db && npx prisma generate
 

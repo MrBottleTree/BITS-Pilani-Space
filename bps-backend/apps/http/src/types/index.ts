@@ -64,7 +64,7 @@ export const UserSchema = z.object({
     handle: z.string(),
     email: z.email(),
     role: RoleSchema
-}).strict();
+});
 
 export const AuthorizationHeaderSchema = z.object({
   authorization: z
@@ -74,7 +74,8 @@ export const AuthorizationHeaderSchema = z.object({
 });
 
 export const BatchUserDeletionSchema = z.object({
-  user_ids: z.array(z.string())
+  user_ids: z.array(z.string()),
+  password: z.string()
 });
 
 export const UpdateUserSchema = z.object({
