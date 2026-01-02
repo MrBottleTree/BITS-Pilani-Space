@@ -47,6 +47,9 @@ model User {
     // Maps created by admin
     maps Map[] @relation("MapCreator")
 
+    // Spaces made by a user
+    spaces Space[]
+
     @@index([role, deleted_at])
     @@index([handle])
 }
@@ -184,4 +187,9 @@ model Space {
     map Map? @relation(fields: [map_id], references: [id], onDelete: SetNull)
 
     added_elements SpaceElementPlacement[]
+
+    user_id String?
+    created_by User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+    @@index([user_id])
 }

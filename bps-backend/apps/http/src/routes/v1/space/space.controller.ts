@@ -137,3 +137,46 @@ export const delete_element_from_space = async (req: Request, res: Response, nex
         return;
     }
 };
+
+
+export const get_spaces = async (req: Request, res: Response, next: NextFunction) => {
+    const current_user = req.user;
+    if(!current_user){
+        res.status(HTTP_STATUS.BAD_REQUEST).json({'error': "User not found in headers"});
+        return
+    }
+
+    try{
+        const spaces = await client.space.findMany({
+            where: { user_id: current_user.user_id, deleted_at: null, map: { deleted_at: null } },
+            select: {
+                id: true,
+                name: true,
+                created_at: true,
+                updated_at: true,
+                map: {
+                    select: {
+                        id: true,
+                        name: true,
+                        height: true,
+                        width: true,
+                        thumbnail_key: true,
+                        created_at: true,
+                        updated_at: true,
+                    }
+                }
+            }
+        });
+
+        res.status(HTTP_STATUS.OK).json({
+            message: "ok",
+            data: {
+                spaces: spaces
+            }
+        })
+    }
+    catch{
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
+        return
+    }
+};
