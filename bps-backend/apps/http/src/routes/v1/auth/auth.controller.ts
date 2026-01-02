@@ -39,19 +39,19 @@ export const signup_post = async (req: Request, res: Response, next: NextFunctio
         user_data.email = parsed_body.data.email;
         user_data.name = parsed_body.data.name;
         user_data.password_hash = hashed_password;
+        user_data.role = parsed_body.data.role;
         if(unique_handle) user_data.handle = unique_handle;
 
         const user = await client.user.create({
             data: user_data,
-            select: {id: true, handle: true} // only need ID, not the entire row
+            select: {id: true, handle: true, role: true, name: true, email: true}
         });
 
         return res.status(HTTP_STATUS.CREATED).json({ message: 'User Created.', data: user }).send();
     }
 
     catch (error: any) {
-        console.log(error);
-        if(error.status == ERROR_DATABASE_DATA_CONFLICT){
+        if(error.code == ERROR_DATABASE_DATA_CONFLICT){
             return res.status(HTTP_STATUS.CONFLICT).json({"error": "Email registered"}).send();
         }
         return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
@@ -71,7 +71,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
     try {
         const user = await client.user.findUnique({
             where: identifier.includes('@') ? { email: identifier, deleted_at: null } : { handle: identifier, deleted_at: null },
-            select: { id: true, handle: true, password_hash: true, email: true, role: true }
+            select: { id: true, handle: true, name: true, password_hash: true, email: true, role: true }
         });
 
         // user not there in our db
@@ -120,6 +120,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
                     user: {
                         id: user.id,
                         handle: user.handle,
+                        name: user.name,
                         email: user.email,
                         role: user.role
                     },

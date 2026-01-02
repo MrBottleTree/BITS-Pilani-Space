@@ -50,7 +50,7 @@ export const add_avatar = async (req: Request, res: Response, next: NextFunction
             return;
         }
         catch(err: any) {
-            if(err.status == ERROR_DATABASE_DATA_CONFLICT) return res.status(HTTP_STATUS.CONFLICT).json({"error": "Avatar with exact key exists"});
+            if(err.code == ERROR_DATABASE_DATA_CONFLICT) return res.status(HTTP_STATUS.CONFLICT).json({"error": "Avatar with exact key exists"});
             return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
         }
     }

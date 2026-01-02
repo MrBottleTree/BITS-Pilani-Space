@@ -5,7 +5,7 @@ axios.defaults.validateStatus = () => true;
 
 const API_VERSION = 'v1';
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3000";
+const BACKEND_URL = process.env.BACKEND_URL || "http://192.168.31.193:3000";
 
 function makeUniqueUsername(prefix = "test") {
     const safePrefix = String(prefix).replace(/[^a-zA-Z0-9_]/g, "_").slice(0, 8) || "test";
