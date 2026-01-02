@@ -6,6 +6,7 @@ import avatarRouter from "./avatar/avatar.routes.js";
 import cloudRouter from "./cloud/cloud.routes.js";
 import elementRouter from "./element/element.routes.js";
 import mapRouter from "./map/map.routes.js";
+import spaceRouter from "./space/space.routes.js";
 
 const router = Router();
 
@@ -20,6 +21,7 @@ router.use("/admin", adminRouter);
 router.use("/avatar", avatarRouter);
 router.use("/cloud", cloudRouter);
 router.use("/element", elementRouter);
-router.use("/map", mapRouter)
+router.use("/map", mapRouter);
+router.use("/space", spaceRouter);
 
 export default router;

@@ -155,3 +155,8 @@ export const AddMapSchema = z.object({
 export const GetManyUserAvatars = z.object({
     user_ids: z.array(z.string()),
 })
+
+export const AddSpaceSchema = z.object({
+    name: z.string(),
+    map_id: z.string(),
+}).strict();

@@ -110,6 +110,7 @@ model Element {
 
     // which maps does this element are defaulted to
     default_to_maps MapElementPlacement[]
+    space_present_in SpaceElementPlacement[]
 
     @@unique([image_key, static])
 }
@@ -131,6 +132,9 @@ model Map {
 
     // elements in this map
     default_elements MapElementPlacement[]
+
+    // all the spaces that extend this map
+    spaces Space[]
 }
 
 model MapElementPlacement {
@@ -150,4 +154,34 @@ model MapElementPlacement {
     rotation Float @default(0)
     
     @@index([map_id])
+}
+
+model SpaceElementPlacement {
+    id String @id @unique @default(cuid())
+
+    space_id String?
+    space Space? @relation(fields: [space_id], references: [id], onDelete: SetNull)
+
+    element_id String?
+    element Element? @relation(fields: [element_id], references: [id], onDelete: SetNull)
+
+    x Int
+    y Int
+    scale Float @default(1)
+    rotation Float @default(0)
+
+}
+
+model Space {
+    id String @id @unique @default(cuid())
+    name String
+
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+    deleted_at DateTime?
+
+    map_id String?
+    map Map? @relation(fields: [map_id], references: [id], onDelete: SetNull)
+
+    added_elements SpaceElementPlacement[]
 }
