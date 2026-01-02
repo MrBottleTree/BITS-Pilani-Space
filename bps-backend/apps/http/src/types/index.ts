@@ -151,3 +151,7 @@ export const AddMapSchema = z.object({
         })
     )
 }).strict();
+
+export const GetManyUserAvatars = z.object({
+    user_ids: z.array(z.string()),
+})

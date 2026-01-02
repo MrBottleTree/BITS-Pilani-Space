@@ -145,3 +145,33 @@ export const get_user = async (req: Request, res: Response, next: NextFunction) 
         return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
     }
 };
+
+export const get_many_users = async (req: Request, res: Response, next: NextFunction) => {
+    const parsed_body = Types.GetManyUserAvatars.safeParse(req.body);
+    if(!parsed_body.success){
+        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "Error parsing the body", "details": get_parsed_error_message(parsed_body)});
+        return
+    }
+
+    try{
+        const db_resp = client.user.findMany({
+            where: {id: { in: parsed_body.data.user_ids } },
+            select:{
+                id: true,
+                name: true,
+                handle: true,
+                avatar: {
+                    select: {
+                        id: true,
+                        image_key: true
+                    }
+                }
+            }
+        });
+
+        res.status(HTTP_STATUS.OK).json({message: "ok", data: { avatars: db_resp }});
+    }
+    catch{
+        return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
+    }
+};
