@@ -1,8 +1,8 @@
 import { WebSocketServer } from 'ws';
 import url from 'url';
 import jwt from "jsonwebtoken";
-import { JWT_SECRET } from './config';
-import { User } from './User';
+import { JWT_SECRET } from './config.js';
+import { User } from './User.js';
 
 const wss = new WebSocketServer({ port: 3001 });
 

@@ -1,4 +1,4 @@
-import type { User } from "./User";
+import type { User } from "./User.js";
 
 export class RoomManager {
     rooms: Map<string, User[]> = new Map();
