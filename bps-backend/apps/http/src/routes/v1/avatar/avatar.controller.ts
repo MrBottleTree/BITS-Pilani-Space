@@ -40,10 +40,16 @@ export const add_avatar = async (req: Request, res: Response, next: NextFunction
                     image_key: key,
                     created_by: { connect: { id: current_user.user_id }}
                 },
+                select: {
+                    id: true,
+                    name: true,
+                    image_key: true,
+                    created_at: true
+                }
             });
 
             res.status(HTTP_STATUS.OK).json({
-                "message": "Avatar uploaded successfully",
+                "message": "Avatar added.",
                 data: { avatar: db_response }
             });
 

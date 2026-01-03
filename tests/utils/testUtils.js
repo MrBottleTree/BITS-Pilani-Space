@@ -76,27 +76,23 @@ async function update_user(token, payload) {
     });
 }
 
-async function upload_avatar(token, metadata, fileBuffer, filename = "test.png") {
-    const form = new NodeFormData();
-    
-    if (metadata.name) {
-        form.append("name", metadata.name); 
-    }
+async function upload_avatar(token, image_key, name="Temp") {
 
-    if (fileBuffer) {
-        form.append("avatar", fileBuffer, filename); 
-    }
-
-    return await axios.post(`${BACKEND_URL}/api/${API_VERSION}/avatar`, form, {
+    return await axios.post(`${BACKEND_URL}/api/${API_VERSION}/avatar`, {
+        name, image_key
+    }, {
         headers: {
             Authorization: 'Bearer ' + token,
-            ...form.getHeaders() 
         }
     });
 }
 
-async function get_avatar(token, avatar_id) {
+async function get_avatar(avatar_id) {
     return await axios.get(`${BACKEND_URL}/api/${API_VERSION}/avatar/${avatar_id}`);
+}
+
+async function get_all_avatar() {
+    return await axios.get(`${BACKEND_URL}/api/${API_VERSION}/avatar/`);
 }
 
 async function uploadFileFromPath(relativeFilePath, token) {
@@ -148,5 +144,6 @@ module.exports = {
   upload_avatar,
   get_avatar,
   uploadFileFromPath,
+  get_all_avatar,
   HTTP_STATUS,
 };

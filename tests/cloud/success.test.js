@@ -11,5 +11,11 @@ describe("Unit tests", () => {
 
         const response = await utils.uploadFileFromPath(image_path, access_token);
         expect(response.status).toBe(utils.HTTP_STATUS.OK);
+        expect(response.data.message).toBeDefined();
+        expect(response.data.data).toBeDefined();
+
+        expect(response.data.message).toBe('Uploaded to cloud.');
+        expect(response.data.data).toBeDefined();
+        expect(response.data.data.key).toBeDefined();
     });
 });
