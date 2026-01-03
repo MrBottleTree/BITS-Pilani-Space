@@ -1,5 +1,8 @@
 const axios = require("axios");
 const NodeFormData = require("form-data"); 
+const path = require("path")
+const fs = require("fs")
+const FormData = require('form-data');
 
 axios.defaults.validateStatus = () => true;
 
@@ -98,24 +101,21 @@ async function get_avatar(token, avatar_id) {
 
 async function uploadFileFromPath(relativeFilePath, token) {
     const absolutePath = path.resolve(relativeFilePath);
+    
     const form = new FormData();
     form.append('images', fs.createReadStream(absolutePath));
     form.append('name', path.basename(absolutePath));
-    try {
-        const response = await axios.post(`${BACKEND_URL}/api/${API_VERSION}/cloud/upload`, {
-            headers: {...form.getHeaders(), "Authorization": `Bearer: ${token}`},
-            body: form
+
+    try {        
+        return await axios.post(`${BACKEND_URL}/api/${API_VERSION}/cloud/upload`, form, {
+            headers: {
+                ...form.getHeaders(),
+                "Authorization": `Bearer ${token}`
+            }
         });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            console.log("Success! Cloud Key:", result.data.key);
-        } else {
-            console.error("Server rejected upload:", result);
-        }
     } catch (error) {
-        console.error("Network or File Error:", error.message);
+        const errorMsg = error.response ? JSON.stringify(error.response.data) : error.message;
+        console.error("Network or File Error:", errorMsg);
     }
 }
 
@@ -148,5 +148,5 @@ module.exports = {
   upload_avatar,
   get_avatar,
   uploadFileFromPath,
-  HTTP_STATUS
+  HTTP_STATUS,
 };
