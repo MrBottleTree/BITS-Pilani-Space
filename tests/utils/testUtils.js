@@ -96,6 +96,29 @@ async function get_avatar(token, avatar_id) {
     return await axios.get(`${BACKEND_URL}/api/${API_VERSION}/avatar/${avatar_id}`);
 }
 
+async function uploadFileFromPath(relativeFilePath, token) {
+    const absolutePath = path.resolve(relativeFilePath);
+    const form = new FormData();
+    form.append('images', fs.createReadStream(absolutePath));
+    form.append('name', path.basename(absolutePath));
+    try {
+        const response = await axios.post(`${BACKEND_URL}/api/${API_VERSION}/cloud/upload`, {
+            headers: {...form.getHeaders(), "Authorization": `Bearer: ${token}`},
+            body: form
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            console.log("Success! Cloud Key:", result.data.key);
+        } else {
+            console.error("Server rejected upload:", result);
+        }
+    } catch (error) {
+        console.error("Network or File Error:", error.message);
+    }
+}
+
 const HTTP_STATUS = {
     OK: 200,
     CREATED: 201,
@@ -124,5 +147,6 @@ module.exports = {
   get_me,
   upload_avatar,
   get_avatar,
+  uploadFileFromPath,
   HTTP_STATUS
 };
