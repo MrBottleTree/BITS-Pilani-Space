@@ -5,6 +5,9 @@ const fs = require("fs")
 const FormData = require('form-data');
 
 axios.defaults.validateStatus = () => true;
+const valid_password = "Password@123";
+let admin_access;
+const email = `${makeUniqueUsername()}@something.com`;
 
 const API_VERSION = 'v1';
 
@@ -127,6 +130,31 @@ async function addElement(payload, access_token){
 
 async function getElement(){
     return await axios.get(`${BACKEND_URL}/api/${API_VERSION}/element/`);
+}
+
+async function add_element_workflow(image_path){
+    if(!admin_access){
+        await signup_user({
+            name: "Test",
+            email,
+            password: valid_password,
+            role
+        });
+    }
+    
+    admin_access = (await signin_user({identifier: email, password: valid_password})).data.data.access_token;
+
+    const image_key = (await uploadFileFromPath(image_path, admin_access)).data.data.key;
+
+    const element_response = await addElement({
+        name: "Test",
+        image_key,
+        height: 5,
+        width: 5,
+        static: false
+    }, admin_access);
+
+    return element_response;
 }
 
 const HTTP_STATUS = {
