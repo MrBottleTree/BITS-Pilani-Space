@@ -115,6 +115,20 @@ async function uploadFileFromPath(relativeFilePath, token) {
     }
 }
 
+async function addElement(payload, access_token){
+    const response = await axios.post(`${BACKEND_URL}/api/${API_VERSION}/element/`, payload, {
+        headers: {
+            Authorization: `Bearer ${access_token}`
+        }
+    });
+
+    return response;
+}
+
+async function getElement(){
+    return await axios.get(`${BACKEND_URL}/api/${API_VERSION}/element/`);
+}
+
 const HTTP_STATUS = {
     OK: 200,
     CREATED: 201,
@@ -146,4 +160,6 @@ module.exports = {
   uploadFileFromPath,
   get_all_avatar,
   HTTP_STATUS,
+  addElement,
+  getElement
 };
