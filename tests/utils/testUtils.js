@@ -98,7 +98,7 @@ async function get_all_avatar() {
     return await axios.get(`${BACKEND_URL}/api/${API_VERSION}/avatar/`);
 }
 
-async function uploadFileFromPath(relativeFilePath, token) {
+async function uploadFileFromPath(relativeFilePath, token = admin_access) {
     const absolutePath = path.resolve(relativeFilePath);
     
     const form = new FormData();
@@ -138,7 +138,7 @@ async function add_element_workflow(image_path){
             name: "Test",
             email,
             password: valid_password,
-            role
+            role: "ADMIN"
         });
     }
     
@@ -156,6 +156,14 @@ async function add_element_workflow(image_path){
 
     return element_response;
 }
+
+async function addMap(payload, access_token=admin_access){
+    return await axios.post(`${BACKEND_URL}/api/${API_VERSION}/map`, payload, {
+        headers:{
+            Authorization: `Bearer ${access_token}`
+        }
+    });
+};
 
 const HTTP_STATUS = {
     OK: 200,
@@ -189,5 +197,8 @@ module.exports = {
   get_all_avatar,
   HTTP_STATUS,
   addElement,
-  getElement
+  getElement,
+  addMap,
+  admin_access,
+  add_element_workflow
 };
