@@ -1,5 +1,4 @@
 const axios = require("axios");
-const NodeFormData = require("form-data"); 
 const path = require("path")
 const fs = require("fs")
 const FormData = require('form-data');
@@ -12,6 +11,7 @@ const email = `${makeUniqueUsername()}@something.com`;
 const API_VERSION = 'v1';
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3000";
+const WEBSOCKET_URL = process.env.WEBSOCKET_URL || "http://localhost:3001"
 
 function makeUniqueUsername(prefix = "test") {
     const safePrefix = String(prefix).replace(/[^a-zA-Z0-9_]/g, "_").slice(0, 8) || "test";
@@ -114,7 +114,6 @@ async function uploadFileFromPath(relativeFilePath, token = admin_access) {
         });
     } catch (error) {
         const errorMsg = error.response ? JSON.stringify(error.response.data) : error.message;
-        console.error("Network or File Error:", errorMsg);
     }
 }
 
@@ -165,6 +164,92 @@ async function addMap(payload, access_token=admin_access){
     });
 };
 
+async function add_map_workflow(image_path){
+    const elements = []
+    for(let x = 0; x<4; x++){
+        elements.push((await add_element_workflow(image_path)).data.data.element.id);
+    }
+
+    const thumbnail_key = (await uploadFileFromPath(image_path, admin_access)).data.data.key;
+
+    const default_elements = [];
+
+    for(let x = 0; x<2; x++){
+        default_elements.push({
+            element_id: elements.at(Math.floor(Math.random()* 3)),
+            x: Math.floor(Math.random()* 99),
+            y: Math.floor(Math.random() * 199),
+            scale: 1,
+            rotation: 0
+        });
+    }
+
+
+    const map_response = await axios.post(`${BACKEND_URL}/api/${API_VERSION}/map/`, {
+        name: "Default map",
+        height: 100,
+        width: 200,
+        thumbnail_key,
+        default_elements
+    }, {
+        headers: {
+            Authorization: `Bearer ${admin_access}`
+        }
+    });
+
+
+    return map_response;
+}
+
+async function addSpace(payload, token){
+    const response = await axios.post(`${BACKEND_URL}/api/${API_VERSION}/space/`, payload, {
+        headers:{
+            Authorization: `Bearer ${token}`
+        }
+    });
+
+
+    return response
+}
+
+let userID;
+let adminID;
+let user_token;
+let admin_token;
+
+async function setupHTTP(){
+    const admin_email = makeUniqueUsername() + '@gmail.com';
+    await signup_user({
+        email: admin_email,
+        password: valid_password,
+        name: "Test user role",
+        role: "USER"
+    });
+
+    const user_email = makeUniqueUsername() + '@gmail.com';
+    await signup_user({
+        email: user_email,
+        password: valid_password,
+        name: "Test admin role",
+        role: "ADMIN"
+    });
+
+    const admin_signin = await signin_user({
+        identifier: admin_email,
+        password: valid_password
+    });
+
+    const user_signin = await signin_user({
+        identifier: user_email,
+        password: valid_password
+    })
+
+    userID = user_signin.data.data.user.id;
+    adminID = admin_signin.data.data.user.id;
+    user_token = user_signin.data.data.access_token;
+    admin_token = admin_signin.data.data.access_token;
+}
+
 const HTTP_STATUS = {
     OK: 200,
     CREATED: 201,
@@ -200,5 +285,7 @@ module.exports = {
   getElement,
   addMap,
   admin_access,
-  add_element_workflow
+  add_element_workflow,
+  add_map_workflow,
+  addSpace
 };
