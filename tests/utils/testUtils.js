@@ -216,6 +216,7 @@ let userID;
 let adminID;
 let user_token;
 let admin_token;
+const messages_ws1 = [];
 
 async function setupHTTP(){
     const admin_email = makeUniqueUsername() + '@gmail.com';
@@ -248,7 +249,46 @@ async function setupHTTP(){
     adminID = admin_signin.data.data.user.id;
     user_token = user_signin.data.data.access_token;
     admin_token = admin_signin.data.data.access_token;
-}
+    admin_access = admin_token;
+
+    add_map_workflow(image_path);
+};
+
+async function setupWS(){
+    const ws1 = new WebSocket(WEBSOCKET_URL);
+    const ws2 = new WebSocket(WEBSOCKET_URL);
+
+    let ws1_awaited_connection, ws2_awaited_connection;
+
+    const ws1_connection_promise = new Promise((resolve, reject) => {
+        ws1.onopen = resolve("connected");
+        ws1.onerror = reject("error");
+    });
+
+    const ws2_connection_promise = new Promise((resolve, reject) => {
+        ws2.onopen = resolve("connected");
+        ws2.onerror = reject("error");
+    });
+
+    try{
+        ws1_awaited_connection = await ws1_connection_promise;
+        ws2_awaited_connection = await ws2_connection_promise;
+    }
+    catch{
+        console.error("JACK ERROR");
+    }
+};
+
+function wait_and_pop(message_list = []){
+    return new Promise((resolve, reject) => {
+        let interval = setInterval(() => {
+            if(message_list.length > 1){
+                resolve(message_list.shift());
+                clearInterval(interval);
+            }
+        }, 100)
+    });
+};
 
 const HTTP_STATUS = {
     OK: 200,
@@ -264,28 +304,29 @@ const HTTP_STATUS = {
 };
 
 module.exports = {
-  axios,
-  API_VERSION,
-  BACKEND_URL,
-  makeUniqueUsername,
-  signup_user,
-  signin_user,
-  signout_user,
-  refresh_token,
-  delete_user,
-  batch_delete_users,
-  update_user,
-  get_me,
-  upload_avatar,
-  get_avatar,
-  uploadFileFromPath,
-  get_all_avatar,
-  HTTP_STATUS,
-  addElement,
-  getElement,
-  addMap,
-  admin_access,
-  add_element_workflow,
-  add_map_workflow,
-  addSpace
+    axios,
+    API_VERSION,
+    BACKEND_URL,
+    makeUniqueUsername,
+    signup_user,
+    signin_user,
+    signout_user,
+    refresh_token,
+    delete_user,
+    batch_delete_users,
+    update_user,
+    get_me,
+    upload_avatar,
+    get_avatar,
+    uploadFileFromPath,
+    get_all_avatar,
+    HTTP_STATUS,
+    addElement,
+    getElement,
+    addMap,
+    admin_access,
+    add_element_workflow,
+    add_map_workflow,
+    addSpace,
+    wait_and_pop,
 };
