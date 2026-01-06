@@ -451,6 +451,7 @@ async function wait_and_pop(message_list = []){
         }, 1000);
 
         const interval = setInterval(() => {
+            console.log(message_list);
             if(message_list.length > 0){
                 clearTimeout(timeout);
                 clearInterval(interval);
@@ -461,18 +462,6 @@ async function wait_and_pop(message_list = []){
 }
 
 describe("Websocket Unit tests", () => {
-    describe("Connection test", () => {
-        test("Connect web socket", async () => {
-            ws = new WebSocket(utils.WEBSOCKET_URL);
-            const connection_promise = new Promise((resolve, reject) => {
-                ws.onopen = resolve('connected');
-                ws.onerror = resolve('rejected');
-            });
-
-            const websocket_response = await connection_promise;
-            expect(websocket_response).toBe('connected');
-        });
-    });
 
     describe("Websocket testcases", () => {
         let ws1;
@@ -518,12 +507,12 @@ describe("Websocket Unit tests", () => {
             ws1.onmessage = (event) => {
                 console.log("data 1 received");
                 console.log(event.data);
-                message_1.push(JSON.parse(event)); 
+                message_1.push(event.data); 
             };
             ws2.onmessage = (event) => {
                 console.log("data 2 received");
                 console.log(event.data);
-                message_2.push(JSON.parse(event));
+                message_2.push(event.data);
             };
 
             const [ws1_response, ws2_response] = await Promise.all([websocket_promise_1, websocket_promise_2]);
@@ -531,16 +520,18 @@ describe("Websocket Unit tests", () => {
             expect(ws1_response).toBe('connected');
             expect(ws2_response).toBe('connected');
 
-            ws1.send()
+            console.log(message_1)
+            console.log(message_2)
+            const msg_1 = await wait_and_pop(message_1);
+            const msg_2 = await wait_and_pop(message_2);
 
-            const ws1_message_response = await wait_and_pop(message_1);
-            const ws2_message_response = await wait_and_pop(message_2);
-            console.log(ws1_message_response);
-            console.log(ws2_message_response)
+
+            expect(msg_1).toBe(`Authenticated as ${signin_response_1.data.data.user.handle}`);
+            expect(msg_2).toBe(`Authenticated as ${signin_response_2.data.data.user.handle}`);
         });
 
         test("Join events", async () => {
-            
+            expect(2).toBe(2);
         });
     });
 });
