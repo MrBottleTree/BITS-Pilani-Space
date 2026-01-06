@@ -442,15 +442,59 @@ describe("Space Unit tests", () => {
     });
 });
 
-describe("Websocket Unit tests", () => {
-    test("Connect web socket", async () => {
-        ws = new WebSocket(utils.WEBSOCKET_URL);
-        const connection_promise = new Promise((resolve, reject) => {
-            ws.onopen = resolve('connected');
-            ws.onerror = resolve('rejected');
-        });
+async function wait_and_pop(message_list = []){
+    return new Promise((resolve, reject) => {
+        const interval = setInterval(() => {
+            if(message_list.length > 1){
+                resolve(message_list.shift());
+                clearInterval(interval);
+            }
+        }, 100);
+    });
+}
 
-        const websocket_response = await connection_promise;
-        expect(websocket_response).toBe('connected');
+describe("Websocket Unit tests", () => {
+    describe("Connection test", () => {
+        test("Connect web socket", async () => {
+            ws = new WebSocket(utils.WEBSOCKET_URL);
+            const connection_promise = new Promise((resolve, reject) => {
+                ws.onopen = resolve('connected');
+                ws.onerror = resolve('rejected');
+            });
+
+            const websocket_response = await connection_promise;
+            expect(websocket_response).toBe('connected');
+        });
+    });
+
+    describe("Websocket testcases", () => {
+        let ws1;
+        let ws2;
+        let message_1 = [];
+        let message_2 = [];
+
+
+        beforeAll(async () => {
+            ws1 = new WebSocket(utils.WEBSOCKET_URL);
+            ws2 = new WebSocket(utils.WEBSOCKET_URL);
+
+            const websocket_promise_1 = new Promise((resolve, reject) => {
+                ws1.onopen = resolve('connected');
+                ws1.onerror = reject('rejected');
+            });
+
+            const websocket_promise_2 = new Promise((resolve, reject) => {
+                ws2.onopen = resolve('connected');
+                ws2.onerror = reject('rejected');
+            });
+
+            const [ws1_response, ws2_response] = await Promise.all([websocket_promise_1, websocket_promise_2]);
+
+            expect(ws1_response).toBe('connected');
+            expect(ws2_response).toBe('connected');
+
+            const ws1_message_response = await wait_and_pop()
+        });
     });
 });
+
