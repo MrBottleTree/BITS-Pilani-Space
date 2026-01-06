@@ -7,9 +7,6 @@ import { User } from './User.js';
 const wss = new WebSocketServer({ port: 3001 });
 
 wss.on('connection', function connection(ws, req) {
-
-    console.log("CONNeKtioN")
-
     const parsed_url = url.parse(req.url || "", true);
     const token = parsed_url.query.token as string;
     if(!token){
@@ -20,7 +17,8 @@ wss.on('connection', function connection(ws, req) {
     let user: User;
 
     try{
-        const decoded = jwt.verify(token, JWT_SECRET) as { user_id: string };
+        const decoded = jwt.verify(token, JWT_SECRET) as { user_id: string, handle: string };
+        console.log(decoded.handle+' connected.');
         user = new User(ws, decoded.user_id);
         user.initHandlers();
     }

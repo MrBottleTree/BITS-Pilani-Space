@@ -444,10 +444,17 @@ describe("Space Unit tests", () => {
 
 async function wait_and_pop(message_list = []){
     return new Promise((resolve, reject) => {
+
+        const timeout = setInterval(() => {
+            clearInterval(interval)
+            reject(new Error("No messages received"));
+        }, 1000);
+
         const interval = setInterval(() => {
-            if(message_list.length > 1){
-                resolve(message_list.shift());
+            if(message_list.length > 0){
+                clearTimeout(timeout);
                 clearInterval(interval);
+                resolve(message_list.shift());
             }
         }, 100);
     });
@@ -472,28 +479,68 @@ describe("Websocket Unit tests", () => {
         let ws2;
         let message_1 = [];
         let message_2 = [];
-
+        let user1_access_token;
+        let user2_access_token;
 
         beforeAll(async () => {
-            ws1 = new WebSocket(utils.WEBSOCKET_URL);
-            ws2 = new WebSocket(utils.WEBSOCKET_URL);
+            const email1 = utils.makeUniqueUsername()+'@gmail.com';
+            const email2 = utils.makeUniqueUsername()+'@gmail.com';
+
+            await Promise.all([
+                utils.signup_user({email: email1, name: "Test user 1", password: valid_password, role: "USER"}),
+                utils.signup_user({email: email2, name: "Test user 2", password: valid_password, role: "USER"})
+            ]);
+            
+            const [signin_response_1, signin_response_2] = await Promise.all([
+                utils.signin_user({identifier: email1, password: valid_password}),
+                utils.signin_user({identifier: email2, password: valid_password})
+            ]);
+
+            console.log(signin_response_1.data.data.user.handle + " user made");
+            console.log(signin_response_2.data.data.user.handle + " user made");
+
+            user1_access_token = signin_response_1.data.data.access_token;
+            user2_access_token = signin_response_2.data.data.access_token;
+
+            ws1 = new WebSocket(`${utils.WEBSOCKET_URL}/?token=${user1_access_token}`);
+            ws2 = new WebSocket(`${utils.WEBSOCKET_URL}/?token=${user2_access_token}`);
 
             const websocket_promise_1 = new Promise((resolve, reject) => {
-                ws1.onopen = resolve('connected');
-                ws1.onerror = reject('rejected');
+                ws1.onopen = () => resolve('connected');
+                ws1.onerror = (err) => reject(err);
             });
 
             const websocket_promise_2 = new Promise((resolve, reject) => {
-                ws2.onopen = resolve('connected');
-                ws2.onerror = reject('rejected');
+                ws2.onopen = () => resolve('connected');
+                ws2.onerror = (err) => reject(err);
             });
+
+            ws1.onmessage = (event) => {
+                console.log("data 1 received");
+                console.log(event.data);
+                message_1.push(JSON.parse(event)); 
+            };
+            ws2.onmessage = (event) => {
+                console.log("data 2 received");
+                console.log(event.data);
+                message_2.push(JSON.parse(event));
+            };
 
             const [ws1_response, ws2_response] = await Promise.all([websocket_promise_1, websocket_promise_2]);
 
             expect(ws1_response).toBe('connected');
             expect(ws2_response).toBe('connected');
 
-            const ws1_message_response = await wait_and_pop()
+            ws1.send()
+
+            const ws1_message_response = await wait_and_pop(message_1);
+            const ws2_message_response = await wait_and_pop(message_2);
+            console.log(ws1_message_response);
+            console.log(ws2_message_response)
+        });
+
+        test("Join events", async () => {
+            
         });
     });
 });

@@ -10,7 +10,7 @@ const valid_password = "Password@123";
 const API_VERSION = 'v1';
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3000";
-const WEBSOCKET_URL = process.env.WEBSOCKET_URL || "http://localhost:3001"
+const WEBSOCKET_URL = process.env.WEBSOCKET_URL || "ws://localhost:3001"
 
 function makeUniqueUsername(prefix = "test") {
     const safePrefix = String(prefix).replace(/[^a-zA-Z0-9_]/g, "_").slice(0, 8) || "test";
