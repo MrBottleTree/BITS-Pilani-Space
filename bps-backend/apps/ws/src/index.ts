@@ -8,6 +8,8 @@ const wss = new WebSocketServer({ port: 3001 });
 
 wss.on('connection', function connection(ws, req) {
 
+    console.log("CONNeKtioN")
+
     const parsed_url = url.parse(req.url || "", true);
     const token = parsed_url.query.token as string;
     if(!token){

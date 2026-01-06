@@ -2,11 +2,10 @@ const axios = require("axios");
 const path = require("path")
 const fs = require("fs")
 const FormData = require('form-data');
+const image_path = "./utils/image.png";
 
 axios.defaults.validateStatus = () => true;
 const valid_password = "Password@123";
-let admin_access;
-const email = `${makeUniqueUsername()}@something.com`;
 
 const API_VERSION = 'v1';
 
@@ -98,7 +97,7 @@ async function get_all_avatar() {
     return await axios.get(`${BACKEND_URL}/api/${API_VERSION}/avatar/`);
 }
 
-async function uploadFileFromPath(relativeFilePath, token = admin_access) {
+async function uploadFileFromPath(relativeFilePath, token) {
     const absolutePath = path.resolve(relativeFilePath);
     
     const form = new FormData();
@@ -131,32 +130,7 @@ async function getElement(){
     return await axios.get(`${BACKEND_URL}/api/${API_VERSION}/element/`);
 }
 
-async function add_element_workflow(image_path){
-    if(!admin_access){
-        await signup_user({
-            name: "Test",
-            email,
-            password: valid_password,
-            role: "ADMIN"
-        });
-    }
-    
-    admin_access = (await signin_user({identifier: email, password: valid_password})).data.data.access_token;
-
-    const image_key = (await uploadFileFromPath(image_path, admin_access)).data.data.key;
-
-    const element_response = await addElement({
-        name: "Test",
-        image_key,
-        height: 5,
-        width: 5,
-        static: false
-    }, admin_access);
-
-    return element_response;
-}
-
-async function addMap(payload, access_token=admin_access){
+async function addMap(payload, access_token){
     return await axios.post(`${BACKEND_URL}/api/${API_VERSION}/map`, payload, {
         headers:{
             Authorization: `Bearer ${access_token}`
@@ -164,13 +138,19 @@ async function addMap(payload, access_token=admin_access){
     });
 };
 
-async function add_map_workflow(image_path){
+async function add_map_workflow(image_path, access_token){
     const elements = []
     for(let x = 0; x<4; x++){
-        elements.push((await add_element_workflow(image_path)).data.data.element.id);
+        const image_key = (await uploadFileFromPath(image_path, access_token)).data.data.key;
+        elements.push((await addElement({
+                name: "something",
+                image_key,
+                height: 1,
+                width: 1,
+                static: false
+        }, access_token)).data.data.element.id);
     }
-
-    const thumbnail_key = (await uploadFileFromPath(image_path, admin_access)).data.data.key;
+    const thumbnail_key = (await uploadFileFromPath(image_path, access_token)).data.data.key;
 
     const default_elements = [];
 
@@ -193,7 +173,7 @@ async function add_map_workflow(image_path){
         default_elements
     }, {
         headers: {
-            Authorization: `Bearer ${admin_access}`
+            Authorization: `Bearer ${access_token}`
         }
     });
 
@@ -216,7 +196,6 @@ let userID;
 let adminID;
 let user_token;
 let admin_token;
-const messages_ws1 = [];
 
 async function setupHTTP(){
     const admin_email = makeUniqueUsername() + '@gmail.com';
@@ -251,7 +230,7 @@ async function setupHTTP(){
     admin_token = admin_signin.data.data.access_token;
     admin_access = admin_token;
 
-    add_map_workflow(image_path);
+    add_map_workflow(image_path, admin_email);
 };
 
 async function setupWS(){
@@ -324,9 +303,9 @@ module.exports = {
     addElement,
     getElement,
     addMap,
-    admin_access,
-    add_element_workflow,
     add_map_workflow,
     addSpace,
     wait_and_pop,
+    setupHTTP,
+    setupWS,
 };
