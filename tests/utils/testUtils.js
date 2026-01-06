@@ -286,6 +286,7 @@ module.exports = {
     axios,
     API_VERSION,
     BACKEND_URL,
+    WEBSOCKET_URL,
     makeUniqueUsername,
     signup_user,
     signin_user,

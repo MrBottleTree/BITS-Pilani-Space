@@ -441,3 +441,16 @@ describe("Space Unit tests", () => {
         
     });
 });
+
+describe("Websocket Unit tests", () => {
+    test("Connect web socket", async () => {
+        ws = new WebSocket(utils.WEBSOCKET_URL);
+        const connection_promise = new Promise((resolve, reject) => {
+            ws.onopen = resolve('connected');
+            ws.onerror = resolve('rejected');
+        });
+
+        const websocket_response = await connection_promise;
+        expect(websocket_response).toBe('connected');
+    });
+});

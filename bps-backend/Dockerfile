@@ -31,4 +31,6 @@ CMD ["/bin/sh", "-c", "\
     \
     echo 'Starting Server...'; \
     npm run start; \
+    cd ../ws; \
+    npm run start;\
     "]
