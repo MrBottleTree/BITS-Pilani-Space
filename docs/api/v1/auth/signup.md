@@ -1,115 +1,55 @@
-# Signup API
+# Signup endpoint
 
-The frontend collects the user's information, sends it to the backend, and the backend responds with a user ID.  
+> Takes in basic information (like name, email and password) of users and signs the user in.
 
----
+**URL:** `[POST] /auth/signup`
 
-## POST BASE/api/v1/auth/signup
+## Request
 
-### What this does
-- Creates a new user account.
-- Returns the user’s unique ID.
-- **Backend does NOT sign in the user YET.**
+**Headers:**
+```Not required```
 
-This endpoint is meant to be called only once per user (during signup).
+**Parameters:**
 
----
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `name` | String | Yes | Real (may) name of the user |
+| `email` | String | Yes | Email of the user |
+| `password` | String | Yes | Password for this account |
+| `role` | Enum(`USER`, ADMIN) | No | User role type |
 
-### What the backend expects
-
-The username must be unique.
-
-The backend expects:
-- **email** (string)
-- **username** (string)
-- **password** (string)
-- **type** (small natural number, 0 for user, 1 for admin. We can define this later)
-
-Here "type" is either 0 for "user" or 1 for "admin" to signup different kinds of users.
-
-**Safety of this may be managed later on. Potential issue here is that any guy can randomly signup for admin. We can fix this later.**
-
-Example request body:
-```json
-{
-  "email": "user@example.com",
-  "username": "user123",
-  "password": "StrongPassword123",
-  "type": "admin"
-}
-
-```
-
-### What the backend returns
-
-On successful signup (HTTP 201 - Created):
-```json
-{
-  "id": (integer/string based on our backend design),
-}
-```
-
-We dont have to return things like username or email because the frontend already has this.
-
-Unsuccessful signup (HTTP 409 - Conflict)
+**Request Body:**
 
 ```json
 {
-  "error": "Username already exists"
+    name: "Vishrut Ramraj",
+    email: "vishrut172@gmail.com",
+    password: "Password@123",
+    role: "ADMIN"
 }
 ```
+```NOTE: The role field will not be accepted in future updates```
 
-or
-
+**Response on success ```(HTTP Code 201: Created)```:**
 ```json
 {
-  "error": "Email in use"
+    message: "User created.",
+    data: {
+        user: {
+            id: "<string>: ID of the user",
+            handle: "<string>: Auto generated unique handle",
+            role: "<string, enum>: USER or ADMIN",
+            name: "<string>: Name of the user",
+            email: "<string>: Email of the user"
+        }
+    }
 }
 ```
 
-Unsuccessful signup (HTTP 422 - Unprocessable Content)
-
-```json
-{
-  "error": "Password does not meet requirement",
-  "details":{
-    (details maybe like length or soemthing, FUTURE WORK)
-  }
-}
-```
-
-Unsuccessful signup (HTTP 403 - Forbidden)
-
-```json
-{
-  "error": "Client not allowed to signup as admin"
-}
-```
-
-Unsuccessful signup (HTTP 400 - Bad Request)
-
-This can be caused because of missing fields, like missing email or missing username.
-
-This can ALSO be caused by unacceptable usernames, for example if the username contains something that is offensive, etc.
-
-response looks like:
-
-```json
-{
-  "error": "Unacceptable username"
-}
-```
-
-or
-
-```json
-{
-  "error": "Missing fields",
-  "details"{
-    (talk about what is missing etc)
-  }
-}
-```
-
-
-## **All other methods will return (HTTP 405 - Method Not Allowed)**
+**Response on failure:**
+* ```(HTTP Code 400: Bad Request)```
+    * Missing Fields
+    * Wrong format on Fields
+    * Fields not in favourable range of length
+* ```(HTTP Code 409: Conflict)```
+    * When user with atleast one unique fields exist

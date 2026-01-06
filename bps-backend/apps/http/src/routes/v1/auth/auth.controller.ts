@@ -47,7 +47,7 @@ export const signup_post = async (req: Request, res: Response, next: NextFunctio
             select: {id: true, handle: true, role: true, name: true, email: true}
         });
 
-        return res.status(HTTP_STATUS.CREATED).json({ message: 'User Created.', data: user }).send();
+        return res.status(HTTP_STATUS.CREATED).json({ message: 'User Created.', data: {user} }).send();
     }
 
     catch (error: any) {

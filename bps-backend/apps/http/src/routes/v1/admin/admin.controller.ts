@@ -55,7 +55,7 @@ export const batch_delete = async (req: Request, res: Response, next: NextFuncti
         // if(updateResult.count !== ids_to_process.length) return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({"error": "error in deleting multiple users"}).send();
 
         return res.status(HTTP_STATUS.OK).json({
-            message: "Batch deletion successful",
+            message: "Users deleted.",
             data: {
                 requested_count: user_ids.length,
                 deleted_count: updateResult.count,
