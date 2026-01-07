@@ -197,67 +197,6 @@ let adminID;
 let user_token;
 let admin_token;
 
-async function setupHTTP(){
-    const admin_email = makeUniqueUsername() + '@gmail.com';
-    await signup_user({
-        email: admin_email,
-        password: valid_password,
-        name: "Test user role",
-        role: "USER"
-    });
-
-    const user_email = makeUniqueUsername() + '@gmail.com';
-    await signup_user({
-        email: user_email,
-        password: valid_password,
-        name: "Test admin role",
-        role: "ADMIN"
-    });
-
-    const admin_signin = await signin_user({
-        identifier: admin_email,
-        password: valid_password
-    });
-
-    const user_signin = await signin_user({
-        identifier: user_email,
-        password: valid_password
-    })
-
-    userID = user_signin.data.data.user.id;
-    adminID = admin_signin.data.data.user.id;
-    user_token = user_signin.data.data.access_token;
-    admin_token = admin_signin.data.data.access_token;
-    admin_access = admin_token;
-
-    add_map_workflow(image_path, admin_email);
-};
-
-async function setupWS(){
-    const ws1 = new WebSocket(WEBSOCKET_URL);
-    const ws2 = new WebSocket(WEBSOCKET_URL);
-
-    let ws1_awaited_connection, ws2_awaited_connection;
-
-    const ws1_connection_promise = new Promise((resolve, reject) => {
-        ws1.onopen = resolve("connected");
-        ws1.onerror = reject("error");
-    });
-
-    const ws2_connection_promise = new Promise((resolve, reject) => {
-        ws2.onopen = resolve("connected");
-        ws2.onerror = reject("error");
-    });
-
-    try{
-        ws1_awaited_connection = await ws1_connection_promise;
-        ws2_awaited_connection = await ws2_connection_promise;
-    }
-    catch{
-        console.error("JACK ERROR");
-    }
-};
-
 function wait_and_pop(message_list = []){
     return new Promise((resolve, reject) => {
         let interval = setInterval(() => {
@@ -307,6 +246,4 @@ module.exports = {
     add_map_workflow,
     addSpace,
     wait_and_pop,
-    setupHTTP,
-    setupWS,
 };
