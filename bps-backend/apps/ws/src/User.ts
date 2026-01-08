@@ -108,6 +108,7 @@ export class User {
                         RoomManager.getInstance().broadcast({
                             type: "MOVE",
                             payload: {
+                                user_id: this.id,
                                 x: this.x,
                                 y: this.y
                             }
