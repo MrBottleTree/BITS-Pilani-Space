@@ -4,13 +4,13 @@ const valid_password = "Password@123";
 const image_path = "./utils/image.png";
 const roles = ['USER', 'ADMIN']
 
-async function signup_and_signin(){
+async function signup_and_signin(role = "ADMIN"){
     const email = `${utils.makeUniqueUsername()}@something.com`;
     await utils.signup_user({
         name: "Test",
         email,
         password: valid_password,
-        role: "ADMIN"
+        role
     });
 
     const response = await utils.signin_user({ identifier: email, password: valid_password });
@@ -439,5 +439,144 @@ describe("Space Unit tests", () => {
 
         expect(space_response.status).toBe(utils.HTTP_STATUS.CREATED);
         
+    });
+});
+
+async function wait_and_pop(message_list = []){
+    return new Promise((resolve, reject) => {
+
+        const timeout = setTimeout(() => {
+            clearInterval(interval)
+            reject(new Error("No messages received"));
+        }, 1000);
+
+        const interval = setInterval(() => {
+            if(message_list.length > 0){
+                clearTimeout(timeout);
+                clearInterval(interval);
+                resolve(message_list.shift());
+            }
+        }, 100);
+    });
+}
+
+describe("Websocket testcases", () => {
+    let ws1;
+    let ws2;
+    let message_1 = [];
+    let message_2 = [];
+    let user1_access_token;
+    let user2_access_token;
+    let admin_id;
+    let admin_token;
+    let admin_email;
+    let space_id;
+
+    async function setupHTTP(){
+        admin_email = utils.makeUniqueUsername() + "@something.com";
+        
+        await utils.signup_user({
+            email: admin_email,
+            name:"test admin credentials",
+            role: "ADMIN",
+            password: valid_password
+        });
+
+        const admin_signin_response = await utils.signin_user({identifier: admin_email, password: valid_password});
+        
+        admin_id = admin_signin_response.data.data.user.id;
+        admin_token = admin_signin_response.data.data.access_token;
+        
+        let element_promises = [];
+        const image_upload = await utils.uploadFileFromPath(image_path, admin_token);
+
+
+        for(let x = 0; x<4; x++){
+            element_promises.push(utils.addElement({
+                name: `Element number ${x}`,
+                image_key: image_upload.data.data.key,
+                height: 1,
+                width: 1,
+                static: false
+            }));
+        }
+
+        const map_response = await utils.add_map_workflow(image_path, admin_token);
+
+        const user_signin = await signup_and_signin("USER");
+        const space_response = await utils.addSpace({name: "Test space playground", map_id: map_response.data.data.map.id}, user_signin.data.data.access_token);
+        space_id = space_response.data.data.space.id;
+    }
+
+    async function setupWS(){
+        const email1 = utils.makeUniqueUsername()+'@gmail.com';
+        const email2 = utils.makeUniqueUsername()+'@gmail.com';
+
+        await Promise.all([
+            utils.signup_user({email: email1, name: "Test user 1", password: valid_password, role: "USER"}),
+            utils.signup_user({email: email2, name: "Test user 2", password: valid_password, role: "USER"})
+        ]);
+        
+        const [signin_response_1, signin_response_2] = await Promise.all([
+            utils.signin_user({identifier: email1, password: valid_password}),
+            utils.signin_user({identifier: email2, password: valid_password})
+        ]);
+
+
+        user1_access_token = signin_response_1.data.data.access_token;
+        user2_access_token = signin_response_2.data.data.access_token;
+
+        ws1 = new WebSocket(`${utils.WEBSOCKET_URL}/?token=${user1_access_token}`);
+        ws2 = new WebSocket(`${utils.WEBSOCKET_URL}/?token=${user2_access_token}`);
+
+        const websocket_promise_1 = new Promise((resolve, reject) => {
+            ws1.onopen = () => resolve('connected');
+            ws1.onerror = (err) => reject(err);
+        });
+
+        const websocket_promise_2 = new Promise((resolve, reject) => {
+            ws2.onopen = () => resolve('connected');
+            ws2.onerror = (err) => reject(err);
+        });
+
+        ws1.onmessage = (event) => {
+            message_1.push(event.data); 
+        };
+        ws2.onmessage = (event) => {
+            message_2.push(event.data);
+        };
+
+        const [ws1_response, ws2_response] = await Promise.all([websocket_promise_1, websocket_promise_2]);
+
+        expect(ws1_response).toBe('connected');
+        expect(ws2_response).toBe('connected');
+
+        const msg_1 = await wait_and_pop(message_1);
+        const msg_2 = await wait_and_pop(message_2);
+
+
+        expect(msg_1).toBe(`Authenticated as ${signin_response_1.data.data.user.handle}`);
+        expect(msg_2).toBe(`Authenticated as ${signin_response_2.data.data.user.handle}`);
+
+    }
+
+    beforeAll(async () => {
+        await setupHTTP();
+        await setupWS();
+    });
+
+    test("Join events", async () => {
+        ws1.send(JSON.stringify({type: "JOIN", payload: {space_id}}));
+        ws2.send(JSON.stringify({type: "JOIN", payload: {space_id}}));
+
+        const [response_1, response_2] = await Promise.all([wait_and_pop(message_1), wait_and_pop(message_2)]);
+
+        expect(JSON.parse(response_1).type).toBe("JOINED");
+        expect(JSON.parse(response_2).type).toBe("JOINED");
+    });
+
+    afterAll(async () => {
+        if(ws1) ws1.close();
+        if(ws2) ws2.close();
     });
 });
