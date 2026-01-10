@@ -1,5 +1,5 @@
 import { WebSocket } from "ws";
-import { InitHandlerSchema, JoinSchema, MoveSchema, OutgoingMessage } from "./types/index.js";
+import { InitHandlerSchema, JoinSchema, MoveSchema, OutgoingMessage } from "@repo/types";
 import { get_parsed_error_message } from "./helper/helper.js";
 import { RoomManager } from "./RoomManager.js";
 import { client } from "@repo/db/client";

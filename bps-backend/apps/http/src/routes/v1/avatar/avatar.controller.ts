@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import { ERROR_DATABASE_DATA_CONFLICT, HTTP_STATUS } from "../../../config.js";
-import * as Types from "../../../types/index.js"
-import { checkFileExists, deleteFile, get_parsed_error_message, uploadFile } from "../utils/helper.js";
+import { ERROR_DATABASE_DATA_CONFLICT, HTTP_STATUS } from "@repo/helper";
+import * as Types from "@repo/types"
+import { checkFileExists, deleteFile, get_parsed_error_message, uploadFile } from "@repo/helper";
 import { client } from "@repo/db";
 
 export const add_avatar = async (req: Request, res: Response, next: NextFunction) => {

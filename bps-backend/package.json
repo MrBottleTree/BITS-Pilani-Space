@@ -24,6 +24,10 @@
       "prisma",
       "@prisma/engines",
       "argon2"
+    ],
+    "ignoredBuiltDependencies": [
+      "bufferutil",
+      "utf-8-validate"
     ]
   }
 }

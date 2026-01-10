@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import * as Types from "../../../types/index.js"
-import { HTTP_STATUS } from "../../../config.js";
-import { deleteFile, get_parsed_error_message, uploadFile } from "../utils/helper.js";
+import * as Types from "@repo/types"
+import { HTTP_STATUS } from "@repo/helper";
+import { deleteFile, get_parsed_error_message, uploadFile } from "@repo/helper";
 import { client } from "@repo/db";
 import { randomUUID } from 'crypto';
 import path from 'path';

@@ -3,9 +3,9 @@ import { client } from "@repo/db/client";
 import argon2 from "argon2";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import * as Types from "../../../types/index.js";
-import { HTTP_STATUS } from "../../../config.js";
-import { get_parsed_error_message, slowHash, slowVerify } from "../utils/helper.js";
+import * as Types from "@repo/types";
+import { HTTP_STATUS } from "@repo/helper";
+import { get_parsed_error_message, slowHash, slowVerify } from "@repo/helper";
 
 export const delete_user = async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;

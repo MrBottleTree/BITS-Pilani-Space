@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import * as Types from "../../../types/index.js";
-import { ERROR_DATABASE_CONNECT_FOREIGN, HTTP_STATUS } from "../../../config.js";
-import { get_parsed_error_message } from "../utils/helper.js";
+import * as Types from "@repo/types";
+import { ERROR_DATABASE_CONNECT_FOREIGN, HTTP_STATUS } from "@repo/helper";
+import { get_parsed_error_message } from "@repo/helper";
 import { client } from "@repo/db";
 
 export const add_space = async (req: Request, res: Response, next: NextFunction) => {

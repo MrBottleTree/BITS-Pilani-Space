@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import { BatchUserDeletionSchema } from "../../../types/index.js";
-import { HTTP_STATUS } from "../../../config.js";
-import { get_parsed_error_message } from "../utils/helper.js";
+import { BatchUserDeletionSchema } from "@repo/types";
+import { HTTP_STATUS, get_parsed_error_message } from "@repo/helper";
 import { parse } from "dotenv";
 import { client } from "@repo/db";
 

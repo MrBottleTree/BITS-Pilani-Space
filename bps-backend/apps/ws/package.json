@@ -17,8 +17,8 @@
     "@types/ws": "^8.18.1",
     "jsonwebtoken": "^9.0.3",
     "ws": "^8.18.3",
-    "zod": "^4.2.1",
-    "@repo/db": "workspace:*"
+    "@repo/db": "workspace:*",
+    "@repo/types": "workspace:*"
   },
   "devDependencies": {
     "esbuild": "^0.27.2"

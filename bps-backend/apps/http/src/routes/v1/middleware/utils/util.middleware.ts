@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import * as Types from "../../../../types/index.js";
-import { HTTP_STATUS, JWT_SECRET, REQUEST_HANDLED, REQUEST_NOTHANDLED } from "../../../../config.js";
+import * as Types from "../@repo/types";
+import { HTTP_STATUS, JWT_SECRET, REQUEST_HANDLED, REQUEST_NOTHANDLED } from "../@repo/helper";
 import jwt from "jsonwebtoken";
 import argon2 from "argon2";
 import { client } from "@repo/db";
