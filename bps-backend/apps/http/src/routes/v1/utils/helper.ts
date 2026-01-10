@@ -130,3 +130,9 @@ export const generateUniqueHandle = async (): Promise<String> => {
     
     return finalHandle;
 };
+
+export const NAAS_BACKEND_URL = process.env.NAAS_BACKEND_URL || 'http://localhost:3002';
+
+export const getRejectionReason = async () => {
+    return fetch(`${NAAS_BACKEND_URL}/no`);
+};
