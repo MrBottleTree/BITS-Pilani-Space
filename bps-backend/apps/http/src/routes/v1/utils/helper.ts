@@ -5,6 +5,7 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } fr
 import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator';
 import { NUM_ATTEMPTS_HANDLE_GENERATION } from "../../../config.js";
 import { client } from "@repo/db";
+import axios from "axios";
 const isLocal = process.env.NODE_ENV !== "production";
 
 export function get_parsed_error_message(result: z.ZodSafeParseError<any>) {
@@ -134,5 +135,5 @@ export const generateUniqueHandle = async (): Promise<String> => {
 export const NAAS_BACKEND_URL = process.env.NAAS_BACKEND_URL || 'http://localhost:3002';
 
 export const getRejectionReason = async () => {
-    return fetch(`${NAAS_BACKEND_URL}/no`);
+    return (await axios.get(`${NAAS_BACKEND_URL}/no`)).data.reason;
 };
