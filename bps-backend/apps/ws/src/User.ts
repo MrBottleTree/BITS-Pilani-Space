@@ -1,6 +1,6 @@
 import { WebSocket } from "ws";
 import { InitHandlerSchema, JoinSchema, MoveSchema, OutgoingMessage } from "@repo/types";
-import { get_parsed_error_message } from "./helper/helper.js";
+import { get_parsed_error_message } from "@repo/helper";
 import { RoomManager } from "./RoomManager.js";
 import { client } from "@repo/db/client";
 

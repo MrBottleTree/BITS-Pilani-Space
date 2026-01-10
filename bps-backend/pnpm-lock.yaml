@@ -127,6 +127,9 @@ importers:
       '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@repo/helper':
+        specifier: workspace:*
+        version: link:../../packages/helper
       '@repo/types':
         specifier: workspace:*
         version: link:../../packages/types
