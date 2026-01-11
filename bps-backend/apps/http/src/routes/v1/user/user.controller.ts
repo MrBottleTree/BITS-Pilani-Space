@@ -4,7 +4,7 @@ import argon2 from "argon2";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import * as Types from "@repo/types";
-import { HTTP_STATUS } from "@repo/helper";
+import { getRejectionReason, HTTP_STATUS } from "@repo/helper";
 import { get_parsed_error_message, slowHash, slowVerify } from "@repo/helper";
 
 export const delete_user = async (req: Request, res: Response, next: NextFunction) => {
@@ -24,7 +24,7 @@ export const delete_user = async (req: Request, res: Response, next: NextFunctio
         return res.status(HTTP_STATUS.OK).json({message: "User set to delete.", data: {user: update_user}}).send();
     }
     catch {
-        return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "error in database operation"}).send();
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "error in database operation", reason: await getRejectionReason()});
     }
 };
 
@@ -32,7 +32,7 @@ export const update_user = async (req: Request, res: Response, next: NextFunctio
     const parsed_body = Types.UpdateUserSchema.safeParse(req.body);
 
     if(!parsed_body.success) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "Error parsing the body", "details": get_parsed_error_message(parsed_body)});
+        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "Error parsing the body", "details": get_parsed_error_message(parsed_body), reason: await getRejectionReason()});
         return;
     }
 
@@ -119,7 +119,7 @@ export const update_user = async (req: Request, res: Response, next: NextFunctio
 
 export const get_user = async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
-    if(!user) return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "Missing user"});
+    if(!user) return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "Missing user", reason: await getRejectionReason()});
 
     try{
         const stored_user = await client.user.findUnique({
@@ -149,7 +149,7 @@ export const get_user = async (req: Request, res: Response, next: NextFunction) 
 export const get_many_users = async (req: Request, res: Response, next: NextFunction) => {
     const parsed_body = Types.GetManyUserAvatars.safeParse(req.body);
     if(!parsed_body.success){
-        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "Error parsing the body", "details": get_parsed_error_message(parsed_body)});
+        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "Error parsing the body", "details": get_parsed_error_message(parsed_body), reason: await getRejectionReason()});
         return
     }
 

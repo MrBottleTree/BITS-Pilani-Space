@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import * as Types from "@repo/types"
-import { HTTP_STATUS } from "@repo/helper";
+import { getRejectionReason, HTTP_STATUS } from "@repo/helper";
 import { deleteFile, get_parsed_error_message, uploadFile } from "@repo/helper";
 import { client } from "@repo/db";
 import { randomUUID } from 'crypto';
@@ -10,7 +10,7 @@ export const upload_image = async (req: Request, res: Response, next: NextFuncti
     const uploaded_file = req.file;
     
     if(!uploaded_file){
-        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "no file uploaded"});
+        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "no file uploaded", rason: await getRejectionReason()});
         return;
     }
 
@@ -18,12 +18,12 @@ export const upload_image = async (req: Request, res: Response, next: NextFuncti
     const actual_file = Types.ImageFileSchema.safeParse(req.file);
 
     if(!metadata.success){
-        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "bad metadata", "details": get_parsed_error_message(metadata)});
+        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "bad metadata", "details": get_parsed_error_message(metadata), reason: await getRejectionReason()});
         return;
     }
 
     if(!actual_file.success){
-        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "bad file", "details": get_parsed_error_message(actual_file)});
+        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "bad file", "details": get_parsed_error_message(actual_file), reason: await getRejectionReason()});
         return;
     }
 
@@ -31,7 +31,7 @@ export const upload_image = async (req: Request, res: Response, next: NextFuncti
 
     // Should not happen because of middleware
     if(!current_user){
-        res.status(HTTP_STATUS.BAD_REQUEST).json({"error":"User not found"});
+        res.status(HTTP_STATUS.BAD_REQUEST).json({"error":"User not found", reason: await getRejectionReason()});
         return;
     }
 

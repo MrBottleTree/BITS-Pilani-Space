@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import * as Types from "@repo/types";
-import { HTTP_STATUS } from "@repo/helper";
+import { getRejectionReason, HTTP_STATUS } from "@repo/helper";
 import { get_parsed_error_message } from "@repo/helper";
 import { client } from "@repo/db";
 
@@ -8,13 +8,13 @@ export const add_map = async (req: Request, res: Response, next: NextFunction) =
     const parsed_body = Types.AddMapSchema.safeParse(req.body);
 
     if(!parsed_body.success){
-        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "Parsing error", "details": get_parsed_error_message(parsed_body)});
+        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "Parsing error", "details": get_parsed_error_message(parsed_body), reason: await getRejectionReason()});
         return
     }
 
     const current_user = req.user;
     if(!current_user){
-        res.status(HTTP_STATUS.BAD_REQUEST).json({"error":"User not found in the body"});
+        res.status(HTTP_STATUS.BAD_REQUEST).json({"error":"User not found in the body", reason: await getRejectionReason()});
         return;
     }
 
@@ -55,7 +55,7 @@ export const get_map = async (req: Request, res: Response, next: NextFunction) =
     try{
         const map_id = req.params.id;
         if(!map_id) {
-            res.status(HTTP_STATUS.BAD_REQUEST).send();
+            res.status(HTTP_STATUS.BAD_REQUEST).json({ reason: await getRejectionReason() });
             return;
         }
 
