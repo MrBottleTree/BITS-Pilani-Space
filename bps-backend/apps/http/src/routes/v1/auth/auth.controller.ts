@@ -3,7 +3,7 @@ import { client } from "@repo/db/client";
 import jwt from "jsonwebtoken";
 import { createId } from "@paralleldrive/cuid2";
 import * as Types from "@repo/types";
-import { JWT_REFRESH_SECRET, JWT_SECRET, HTTP_STATUS, ERROR_DATABASE_DATA_CONFLICT, fastHashToken, fastValidate, generateUniqueHandle, get_parsed_error_message, slowHash, slowVerify } from "@repo/helper";
+import { JWT_REFRESH_SECRET, JWT_SECRET, HTTP_STATUS, ERROR_DATABASE_DATA_CONFLICT, fastHashToken, fastValidate, generateUniqueHandle, get_parsed_error_message, slowHash, slowVerify, getRejectionReason } from "@repo/helper";
 
 
 const REFRESH_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 Days
@@ -22,7 +22,8 @@ export const signup_post = async (req: Request, res: Response, next: NextFunctio
     if (!parsed_body.success) {
         return res.status(HTTP_STATUS.BAD_REQUEST).json({
             error: "Invalid signup data",
-            details: get_parsed_error_message(parsed_body)
+            details: get_parsed_error_message(parsed_body),
+            reason: await getRejectionReason()
         }).send();
     }
 
@@ -62,7 +63,7 @@ export const signin_post = async (req: Request, res: Response, next: NextFunctio
     const parsed_body = Types.SigninSchema.safeParse(req.body);
 
     // not clean data
-    if (!parsed_body.success) return res.status(HTTP_STATUS.BAD_REQUEST).json({error: "Invalid signin data", details: get_parsed_error_message(parsed_body)}).send();
+    if (!parsed_body.success) return res.status(HTTP_STATUS.BAD_REQUEST).json({error: "Invalid signin data", details: get_parsed_error_message(parsed_body), reason: await getRejectionReason()}).send();
     
     const identifier = parsed_body.data.identifier;
     const password = parsed_body.data.password;
@@ -160,7 +161,7 @@ export const signout_post = async (req: Request, res: Response, next: NextFuncti
 export const refresh_post = async (req: Request, res: Response, next: NextFunction) => {
     const refresh_token = req.cookies?.refresh_token;
 
-    if (!refresh_token) return res.status(HTTP_STATUS.BAD_REQUEST).send();
+    if (!refresh_token) return res.status(HTTP_STATUS.BAD_REQUEST).json({reason: await getRejectionReason()});
 
     try {
         const decodedRefresh = jwt.verify(refresh_token, JWT_REFRESH_SECRET) as { user_id: string; jti: string };
