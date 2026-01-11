@@ -1,0 +1,16 @@
+{
+  "name": "no-as-service",
+  "version": "1.0.0",
+  "description": "A lightweight API that returns random rejection or no reasons.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "def": "npm run start",
+    "build": "echo built"
+  },
+  "author": "hotheadhacker",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
