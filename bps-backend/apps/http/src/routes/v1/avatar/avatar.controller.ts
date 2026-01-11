@@ -1,19 +1,19 @@
 import { NextFunction, Request, Response } from "express";
-import { ERROR_DATABASE_DATA_CONFLICT, HTTP_STATUS } from "../../../config.js";
-import * as Types from "../../../types/index.js"
-import { checkFileExists, deleteFile, get_parsed_error_message, uploadFile } from "../utils/helper.js";
+import { ERROR_DATABASE_DATA_CONFLICT, getRejectionReason, HTTP_STATUS } from "@repo/helper";
+import * as Types from "@repo/types"
+import { checkFileExists, deleteFile, get_parsed_error_message, uploadFile } from "@repo/helper";
 import { client } from "@repo/db";
 
 export const add_avatar = async (req: Request, res: Response, next: NextFunction) => {
     const current_user = req.user;
     
     // shouldnt happen but ok
-    if(!current_user) return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "user not found in request"});
+    if(!current_user) return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "user not found in request", reason: await getRejectionReason()});
 
     const parsed_body = Types.AddAvatarSchema.safeParse(req.body);
 
     if(!parsed_body.success){
-        res.status(HTTP_STATUS.BAD_REQUEST).json({"error":"error parsing the body", "details": get_parsed_error_message(parsed_body)});
+        res.status(HTTP_STATUS.BAD_REQUEST).json({"error":"error parsing the body", "details": get_parsed_error_message(parsed_body), reason: await getRejectionReason()});
         return
     }
 
@@ -70,7 +70,7 @@ export const get_avatar = async (req: Request, res: Response, next: NextFunction
     const { id } = req.params;
 
     if (!id) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({ error: "Avatar ID is required" });
+        res.status(HTTP_STATUS.BAD_REQUEST).json({ error: "Avatar ID is required", reason: await getRejectionReason() });
         return;
     }
 

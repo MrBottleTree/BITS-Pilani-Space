@@ -1,13 +1,13 @@
 import { NextFunction, Request, Response } from "express";
-import * as Types from "../../../types/index.js";
-import { ERROR_DATABASE_CONNECT_FOREIGN, HTTP_STATUS } from "../../../config.js";
-import { get_parsed_error_message } from "../utils/helper.js";
+import * as Types from "@repo/types";
+import { ERROR_DATABASE_CONNECT_FOREIGN, getRejectionReason, HTTP_STATUS } from "@repo/helper";
+import { get_parsed_error_message } from "@repo/helper";
 import { client } from "@repo/db";
 
 export const add_space = async (req: Request, res: Response, next: NextFunction) => {
     const parsed_body = Types.AddSpaceSchema.safeParse(req.body);
     if(!parsed_body.success){
-        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "Error parsing the body", "details": get_parsed_error_message(parsed_body)});
+        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "Error parsing the body", "details": get_parsed_error_message(parsed_body), reason: await getRejectionReason()});
         return
     }
 
@@ -21,7 +21,7 @@ export const add_space = async (req: Request, res: Response, next: NextFunction)
         });
 
         if(!check_map){
-            res.status(HTTP_STATUS.BAD_REQUEST).json({error: "Map deleted."});
+            res.status(HTTP_STATUS.BAD_REQUEST).json({error: "Map deleted.", reason: await getRejectionReason()});
             return;
         }
 
@@ -72,7 +72,7 @@ export const add_space = async (req: Request, res: Response, next: NextFunction)
     }
     catch(err: any){
         if(err.code == ERROR_DATABASE_CONNECT_FOREIGN){
-            res.status(HTTP_STATUS.BAD_REQUEST).json({error: "Invalid map id."});
+            res.status(HTTP_STATUS.BAD_REQUEST).json({error: "Invalid map id.", reason: await getRejectionReason()});
             return;
         }
 
@@ -83,7 +83,7 @@ export const add_space = async (req: Request, res: Response, next: NextFunction)
 export const add_element_to_space = async (req: Request, res: Response, next: NextFunction) => {
     const parsed_body = Types.AddElementToSpaceSchema.safeParse(req.body);
     if(!parsed_body.success){
-        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "Error parsing the body", "details": get_parsed_error_message(parsed_body)});
+        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "Error parsing the body", "details": get_parsed_error_message(parsed_body), reason: await getRejectionReason()});
         return
     }
 
@@ -121,7 +121,7 @@ export const add_element_to_space = async (req: Request, res: Response, next: Ne
 export const delete_element_from_space = async (req: Request, res: Response, next: NextFunction) => {
     const parsed_body = Types.DeleteElementFromSpaceSchema.safeParse(req.body);
     if(!parsed_body.success){
-        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "Error parsing the body", "details": get_parsed_error_message(parsed_body)});
+        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "Error parsing the body", "details": get_parsed_error_message(parsed_body), reason: await getRejectionReason()});
         return
     }
 
@@ -142,7 +142,7 @@ export const delete_element_from_space = async (req: Request, res: Response, nex
 export const get_spaces = async (req: Request, res: Response, next: NextFunction) => {
     const current_user = req.user;
     if(!current_user){
-        res.status(HTTP_STATUS.BAD_REQUEST).json({'error': "User not found in headers"});
+        res.status(HTTP_STATUS.BAD_REQUEST).json({'error': "User not found in headers", reason: await getRejectionReason()});
         return
     }
 

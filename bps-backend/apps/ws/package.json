@@ -13,12 +13,14 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@repo/db": "workspace:*",
+    "@repo/helper": "workspace:*",
+    "@repo/types": "workspace:*",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/ws": "^8.18.1",
+    "argon2": "^0.44.0",
     "jsonwebtoken": "^9.0.3",
-    "ws": "^8.18.3",
-    "zod": "^4.2.1",
-    "@repo/db": "workspace:*"
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "esbuild": "^0.27.2"

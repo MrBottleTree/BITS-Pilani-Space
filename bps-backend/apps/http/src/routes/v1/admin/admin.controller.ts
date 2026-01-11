@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import { BatchUserDeletionSchema } from "../../../types/index.js";
-import { HTTP_STATUS } from "../../../config.js";
-import { get_parsed_error_message } from "../utils/helper.js";
+import { BatchUserDeletionSchema } from "@repo/types";
+import { HTTP_STATUS, getRejectionReason, get_parsed_error_message } from "@repo/helper";
 import { parse } from "dotenv";
 import { client } from "@repo/db";
 
@@ -9,7 +8,7 @@ import { client } from "@repo/db";
 export const batch_delete = async (req: Request, res: Response, next: NextFunction) => {
     const parsed_body = BatchUserDeletionSchema.safeParse(req.body);
 
-    if(!parsed_body.success) return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "parse error", "details": get_parsed_error_message(parsed_body)}).send();
+    if(!parsed_body.success) return res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "parse error", "details": get_parsed_error_message(parsed_body), reason: await getRejectionReason()}).send();
 
     const user_ids = parsed_body.data?.user_ids;
 

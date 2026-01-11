@@ -10,7 +10,7 @@
   },
   "devDependencies": {
     "prettier": "^3.7.4",
-    "turbo": "^2.7.2",
+    "turbo": "^2.7.3",
     "typescript": "5.9.2"
   },
   "packageManager": "pnpm@10.26.2",
@@ -24,6 +24,10 @@
       "prisma",
       "@prisma/engines",
       "argon2"
+    ],
+    "ignoredBuiltDependencies": [
+      "bufferutil",
+      "utf-8-validate"
     ]
   }
 }

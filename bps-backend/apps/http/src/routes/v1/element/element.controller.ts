@@ -1,20 +1,20 @@
 import { Request, Response, NextFunction } from "express";
-import * as Types from "../../../types/index.js";
-import { HTTP_STATUS } from "../../../config.js";
-import { get_parsed_error_message } from "../utils/helper.js";
+import * as Types from "@repo/types";
+import { getRejectionReason, HTTP_STATUS } from "@repo/helper";
+import { get_parsed_error_message } from "@repo/helper";
 import { client } from "@repo/db";
 
 export const add_element = async (req: Request, res: Response, next: NextFunction) => {
     const parsed_body = Types.AddElementSchema.safeParse(req.body);
 
     if(!parsed_body.success){
-        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "Failed to parse the body", "details": get_parsed_error_message(parsed_body)});
+        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "Failed to parse the body", "details": get_parsed_error_message(parsed_body), reason: await getRejectionReason()});
         return
     }
 
     const current_user = req.user;
     if(!current_user) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "User not found in body"});
+        res.status(HTTP_STATUS.BAD_REQUEST).json({"error": "User not found in body", reason: await getRejectionReason()});
         return;
     }
 
