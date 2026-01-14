@@ -3,7 +3,7 @@ import { Signup } from "./pages/Signup";
 
 export const router = createBrowserRouter([
     {
-        path: "/",
+        path: "/signup",
         element: <Signup />,
     },
 ]);
