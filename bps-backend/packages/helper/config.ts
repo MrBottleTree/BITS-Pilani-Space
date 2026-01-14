@@ -31,3 +31,5 @@ export const REQUEST_NOTHANDLED = true;
 export const NUM_ATTEMPTS_HANDLE_GENERATION = 10;
 export const ERROR_DATABASE_DATA_CONFLICT = 'P2002';
 export const ERROR_DATABASE_CONNECT_FOREIGN = 'P2025'
+export const NAAS_BACKEND_URL = process.env.NAAS_BACKEND_URL || 'http://localhost:3002';
+export const HTTP_BACKEND_URL = process.env.HTTP_BACKEND_URL || 'http://localhost:3000';

@@ -3,7 +3,7 @@ import crypto from "crypto";
 import argon2 from "argon2";
 import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { uniqueNamesGenerator, adjectives, colors, animals } from 'unique-names-generator';
-import { NUM_ATTEMPTS_HANDLE_GENERATION } from "./config.js";
+import { NAAS_BACKEND_URL, NUM_ATTEMPTS_HANDLE_GENERATION } from "./config.js";
 import { client } from "@repo/db";
 import axios from "axios";
 const isLocal = process.env.NODE_ENV !== "production";
@@ -132,8 +132,6 @@ export const generateUniqueHandle = async (): Promise<String> => {
     
     return finalHandle;
 };
-
-export const NAAS_BACKEND_URL = process.env.NAAS_BACKEND_URL || 'http://localhost:3002';
 
 export const getRejectionReason = async () => {
     return (await axios.get(`${NAAS_BACKEND_URL}/no`)).data.reason;
