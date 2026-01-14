@@ -2,8 +2,15 @@ import express from "express";
 import v1_router from "./routes/v1/index.js";
 import cookieParser from "cookie-parser";
 import { client } from "@repo/db";
+import cors from "cors";
 
 const app = express();
+
+app.use(cors({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
+}));
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));

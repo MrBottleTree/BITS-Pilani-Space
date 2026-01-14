@@ -39,7 +39,7 @@ export const signup_post = async (req: Request, res: Response, next: NextFunctio
         user_data.email = parsed_body.data.email;
         user_data.name = parsed_body.data.name;
         user_data.password_hash = hashed_password;
-        user_data.role = parsed_body.data.role;
+        user_data.role = parsed_body.data.role || "USER";
         if(unique_handle) user_data.handle = unique_handle;
 
         const user = await client.user.create({

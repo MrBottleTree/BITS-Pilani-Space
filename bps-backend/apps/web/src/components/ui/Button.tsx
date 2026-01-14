@@ -1,12 +1,17 @@
 interface ButtonProps {
     label: string;
-    onClick: () => void;
+    onClick?: () => void;
     className?: string;
+    disabled?: boolean;
 }
 
-export function Button({ label, onClick, className }: ButtonProps) {
+export function Button({ label, onClick, className, disabled }: ButtonProps) {
     return (
-        <button onClick={onClick} className={className}>
+        <button 
+            onClick={onClick} 
+            className={className} 
+            disabled={disabled}
+        >
             {label}
         </button>
     )
