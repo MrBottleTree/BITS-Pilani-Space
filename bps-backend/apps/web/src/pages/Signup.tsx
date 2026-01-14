@@ -2,6 +2,7 @@ import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { useState } from "react";
 import axios from "axios";
+import { HTTP_BACKEND_URL } from "../config";
 
 export function Signup() {
     const [name, setName] = useState("");
@@ -13,10 +14,10 @@ export function Signup() {
         setIsLoading(true);
 
         try {
-            const response = await axios.post(`http://127.0.0.1:3000/api/v1/auth/signup`, {
-                    name: name,
-                    email: email,
-                    password: password
+            const response = await axios.post(`${HTTP_BACKEND_URL}/api/v1/auth/signup`, {
+                name: name,
+                email: email,
+                password: password
             });
 
             const data = response;
