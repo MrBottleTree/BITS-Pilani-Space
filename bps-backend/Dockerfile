@@ -19,6 +19,8 @@ RUN cd packages/db && npx prisma generate
 RUN pnpm run build
 
 EXPOSE 3000
+EXPOSE 3001
+EXPOSE 3002
 
 CMD ["/bin/sh", "-c", "\
     echo 'Moving to packages/db for migrations...'; \
@@ -27,10 +29,8 @@ CMD ["/bin/sh", "-c", "\
     npx prisma migrate reset --force; \
     npx prisma migrate dev --name init; \
     echo 'Moving to server directory...'; \
-    cd ../../apps/http; \
+    cd ../../; \
     \
     echo 'Starting Server...'; \
-    npm run start; \
-    cd ../ws; \
-    npm run start;\
+    pnpm run start; \
     "]

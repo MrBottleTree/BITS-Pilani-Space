@@ -21,6 +21,6 @@ clean:
 test:
 	@echo "Restarting services..."
 	docker compose down
-	docker compose up -d backend postgres minio minio-setup
+	docker compose up -d --build backend postgres minio minio-setup
 	@echo "Running tests..."
 	docker compose run --rm --build tests

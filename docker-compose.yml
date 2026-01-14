@@ -60,6 +60,8 @@ services:
     container_name: bps-backend
     ports:
       - "3000:3000"
+      - "3001:3001"
+      - "3002:3002"
     environment:
       DATABASE_URL: "postgresql://bps:lol@postgres:5432/bps_db?schema=public"
       S3_ENDPOINT: "http://minio:9000"
@@ -80,6 +82,7 @@ services:
       - ./tests:/app/tests
     environment:
       BACKEND_URL: "http://backend:3000"
+      WEBSOCKET_URL: "http://backend:3001"
     networks:
       - bps-network
     depends_on:
@@ -92,7 +95,9 @@ services:
         echo '...backend not ready yet (ECONNREFUSED), retrying in 1s...'; 
         sleep 1; 
       done && 
-      echo 'Backend is UP! Starting tests...' && 
+      echo 'Backend is responding! Waiting 5s for DB connection to stabilize...' && 
+      sleep 5 && 
+      echo 'Starting tests...' && 
       npm install && 
       npm run test
       "
