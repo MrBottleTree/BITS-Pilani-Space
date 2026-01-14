@@ -5,9 +5,9 @@ import { createId } from "@paralleldrive/cuid2";
 import * as Types from "@repo/types";
 import { JWT_REFRESH_SECRET, JWT_SECRET, HTTP_STATUS, ERROR_DATABASE_DATA_CONFLICT, fastHashToken, fastValidate, generateUniqueHandle, get_parsed_error_message, slowHash, slowVerify, getRejectionReason } from "@repo/helper";
 
-
 const REFRESH_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 Days
-const ACCESS_EXPIRY_SEC = 5 * 60; // 5 Minutes
+const ACCESS_EXPIRY_SEC = 15 * 60; // 15 Minutes
+
 const COOKIE_OPTS = { 
     httpOnly: true, 
     secure: process.env.NODE_ENV === "production", 
@@ -166,9 +166,18 @@ export const refresh_post = async (req: Request, res: Response, next: NextFuncti
     try {
         const decodedRefresh = jwt.verify(refresh_token, JWT_REFRESH_SECRET) as { user_id: string; jti: string };
 
+        const new_refresh_token = jwt.sign(
+            { user_id: decodedRefresh.user_id, jti: decodedRefresh.jti },
+            JWT_REFRESH_SECRET,
+            { expiresIn: "7d" }
+        );
+
+        const new_refresh_hash = fastHashToken(new_refresh_token);
+
         // if it is valid, this line is run
-        const row = await client.refreshToken.findUnique({
+        const row = await client.refreshToken.update({
             where: { id: decodedRefresh.jti, revoked_at: null },
+            data: { expires_at: new Date(Date.now() + REFRESH_EXPIRY_MS), token_hash: new_refresh_hash },
             select: { user_id: true, token_hash: true, user: { select: { id: true, handle: true, email: true, role: true } } },
         });
 
@@ -183,7 +192,14 @@ export const refresh_post = async (req: Request, res: Response, next: NextFuncti
             { expiresIn: ACCESS_EXPIRY_SEC }
         );
 
-        return res.status(HTTP_STATUS.OK).json({ message: "Access Token refreshed.", data: { access_token, expires_in: ACCESS_EXPIRY_SEC } }).send();
+        return res.cookie('refresh_token', new_refresh_token, COOKIE_OPTS)
+            .status(HTTP_STATUS.OK)
+            .json({ message: "Access Token refreshed.", 
+                data: { 
+                    access_token,
+                    expires_in: ACCESS_EXPIRY_SEC 
+                } 
+            });
     }
     catch { return res.status(HTTP_STATUS.UNAUTHORIZED).send(); };
 };
