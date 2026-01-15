@@ -3,12 +3,15 @@ import { Input } from "../components/ui/Input";
 import { useState } from "react";
 import axios from "axios";
 import { HTTP_BACKEND_URL } from "../config";
+import { useNavigate } from "react-router-dom";
 
 export function Signup() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+
+    const navigate = useNavigate();
 
     async function handleSignup() {
         setIsLoading(true);
@@ -20,17 +23,23 @@ export function Signup() {
                 password: password
             });
 
-            const data = response;
+            const data = response; 
 
-            if (data.status == 201) {
-                alert("Signed up successfully!");
-            } else {
+            if (data.status == 201) {                
+                navigate("/auth/signin");
+            }
+
+            else {
                 alert("Error: " + data.data);
             }
-        } catch (error) {
+        }
+        
+        catch (error) {
             console.error("Signup failed:", error);
             alert("Something went wrong while signing up.");
-        } finally {
+        }
+        
+        finally {
             setIsLoading(false);
         }
     }
