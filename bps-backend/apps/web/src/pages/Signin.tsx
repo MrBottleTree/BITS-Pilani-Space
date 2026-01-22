@@ -1,4 +1,4 @@
-import axios, { HttpStatusCode } from "axios";
+import axios, { HttpStatusCode } from "../api/axios";
 import { useState } from "react"
 import { HTTP_BACKEND_URL } from "../config";
 import { Input } from "../components/ui/Input";
@@ -13,8 +13,8 @@ export function Signin() {
         setIsLoading(true);
 
         try{
-            const response = await axios.post(`${HTTP_BACKEND_URL}/api/v1/auth/signin`, {identifier, password});
-
+            const response = await axios.post(`${HTTP_BACKEND_URL}/api/v1/auth/signin`, {identifier, password}, { withCredentials: true });
+            console.log("Here are the cookies: " + response.headers)
             if(response.status == HttpStatusCode.Ok){
                 console.log(response.data);
                 // Need to store the access key and stuff in local storage

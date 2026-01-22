@@ -1,7 +1,7 @@
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { useState } from "react";
-import axios from "axios";
+import axios from "../api/axios";
 import { HTTP_BACKEND_URL } from "../config";
 import { useNavigate } from "react-router-dom";
 
