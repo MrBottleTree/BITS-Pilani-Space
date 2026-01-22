@@ -161,11 +161,10 @@ export const signout_post = async (req: Request, res: Response, next: NextFuncti
 export const refresh_post = async (req: Request, res: Response, next: NextFunction) => {
     const refresh_token = req.cookies?.refresh_token;
 
-    if (!refresh_token) return res.status(HTTP_STATUS.BAD_REQUEST).json({reason: await getRejectionReason()});
+    if (!refresh_token) return res.status(HTTP_STATUS.BAD_REQUEST).json({message: "No refresh token found", reason: await getRejectionReason()});
 
     try {
         const decodedRefresh = jwt.verify(refresh_token, JWT_REFRESH_SECRET) as { user_id: string; jti: string };
-
         const new_refresh_token = jwt.sign(
             { user_id: decodedRefresh.user_id, jti: decodedRefresh.jti },
             JWT_REFRESH_SECRET,
@@ -181,10 +180,7 @@ export const refresh_post = async (req: Request, res: Response, next: NextFuncti
             select: { user_id: true, token_hash: true, user: { select: { id: true, handle: true, email: true, role: true } } },
         });
 
-        if (!(row && row.user_id === decodedRefresh.user_id && row.user)) return res.status(HTTP_STATUS.UNAUTHORIZED).send();
-
-        // CAUGHT
-        if (!fastValidate(refresh_token, row.token_hash)) return res.status(HTTP_STATUS.UNAUTHORIZED).send();
+        if (!(row && row.user_id === decodedRefresh.user_id && row.user)) return res.status(HTTP_STATUS.UNAUTHORIZED).json({message: "Invalid refresh token", reason: await getRejectionReason()});
 
         const access_token = jwt.sign(
             { user_id: row.user.id, handle: row.user.handle, email: row.user.email, role: row.user.role },
@@ -201,5 +197,5 @@ export const refresh_post = async (req: Request, res: Response, next: NextFuncti
                 } 
             });
     }
-    catch { return res.status(HTTP_STATUS.UNAUTHORIZED).send(); };
+    catch(err) { return res.status(HTTP_STATUS.UNAUTHORIZED).json({error:err}); };
 };
