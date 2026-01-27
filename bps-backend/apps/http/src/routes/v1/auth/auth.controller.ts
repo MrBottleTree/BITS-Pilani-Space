@@ -6,7 +6,7 @@ import * as Types from "@repo/types";
 import { JWT_REFRESH_SECRET, JWT_SECRET, HTTP_STATUS, ERROR_DATABASE_DATA_CONFLICT, fastHashToken, fastValidate, generateUniqueHandle, get_parsed_error_message, slowHash, slowVerify, getRejectionReason } from "@repo/helper";
 
 const REFRESH_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 Days
-const ACCESS_EXPIRY_SEC = 15 * 60; // 15 Minutes
+const ACCESS_EXPIRY_SEC = 10; // 15 Minutes
 
 const COOKIE_OPTS = { 
     httpOnly: true, 

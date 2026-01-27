@@ -3,33 +3,35 @@ import { useState } from "react"
 import { HTTP_BACKEND_URL } from "../config";
 import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
+import { useAuth } from "../context/AuthContext";
 
 export function Signin() {
     const [identifier, setIdentifier] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const { login } = useAuth();
 
     async function handleSignin() {
         setIsLoading(true);
 
-        try{
-            const response = await axios.post(`${HTTP_BACKEND_URL}/api/v1/auth/signin`, {identifier, password}, { withCredentials: true });
-            console.log("Here are the cookies: " + response.headers)
-            if(response.status == HttpStatusCode.Ok){
-                console.log(response.data);
-                // Need to store the access key and stuff in local storage
+        try {
+            const response = await axios.post(`${HTTP_BACKEND_URL}/api/v1/auth/signin`, { identifier, password });
+
+            if (response.status == HttpStatusCode.Ok) {
+                const { access_token, expires_in, user } = response.data.data;
+                login(access_token, expires_in, user);
+                // For now, just alerting
+                alert("Signed in successfully!");
             }
-            else{
-                // Need to take care of cases like incorrect identifier etc
+            else {
                 alert("Error in signing in")
             }
         }
 
-        catch(err) {
-            console.error("Error: " + err);
+        catch (err) {
+            alert("Error: " + err);
         }
-
-        finally{
+        finally {
             setIsLoading(false);
         }
     }
@@ -44,8 +46,8 @@ export function Signin() {
             <br />
             <Input placeholder="Password" onChange={(e) => setPassword(e.target.value)} />
             <br />
-            <Button 
-                label={isLoading ? "Signing in..." : "Submit"} 
+            <Button
+                label={isLoading ? "Signing in..." : "Submit"}
                 disabled={isLoading}
             />
         </form>

@@ -1,7 +1,7 @@
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { useState } from "react";
-import axios from "../api/axios";
+import axios, { HttpStatusCode } from "../api/axios";
 import { HTTP_BACKEND_URL } from "../config";
 import { useNavigate } from "react-router-dom";
 
@@ -25,7 +25,7 @@ export function Signup() {
 
             const data = response; 
 
-            if (data.status == 201) {                
+            if (data.status == HttpStatusCode.Created) {                
                 navigate("/auth/signin");
             }
 
