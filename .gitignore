@@ -16,3 +16,4 @@ yarn-error.log*
 minio_data/
 
 *.ipynb
+GEMINI.md
