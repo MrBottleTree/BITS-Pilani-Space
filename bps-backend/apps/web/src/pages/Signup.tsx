@@ -25,7 +25,7 @@ export function Signup() {
 
             const data = response; 
 
-            if (data.status == HttpStatusCode.Created) {                
+            if (data.status === HttpStatusCode.Created) {                
                 navigate("/auth/signin");
             }
 
@@ -51,11 +51,11 @@ export function Signup() {
                 e.preventDefault();
                 handleSignup();
             }}>
-                <Input placeholder="Full name" onChange={(e) => setName(e.target.value)} />
-                <br /> 
-                <Input placeholder="Email" onChange={(e) => setEmail(e.target.value)} />
+                <Input placeholder="Full name" type="text" value={name} onChange={(e) => setName(e.target.value)} />
                 <br />
-                <Input placeholder="Password" onChange={(e) => setPassword(e.target.value)} />
+                <Input placeholder="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                <br />
+                <Input placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
                 <br />
 
                 <Button 

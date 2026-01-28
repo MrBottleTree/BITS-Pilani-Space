@@ -1,15 +1,18 @@
 interface InputProps {
     placeholder: string;
     className?: string; 
-    onChange: (e: any) => void;
+    type?: 'text' | 'password' | 'email';
+    value?: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-export function Input({ placeholder, className, onChange }: InputProps) {
+export function Input({ placeholder, className, type = 'text', value, onChange }: InputProps) {
     return (
-        <input 
-            type="text" 
-            placeholder={placeholder} 
+        <input
+            type={type}
+            placeholder={placeholder}
             className={className}
+            value={value}
             onChange={onChange}
         />
     )

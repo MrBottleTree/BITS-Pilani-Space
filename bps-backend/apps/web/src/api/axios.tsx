@@ -11,13 +11,13 @@ const api = axios.create({
 
 
 api.interceptors.request.use((config) => {
-    const access_token = localStorage.getItem('accessToken');
+    const access_token = localStorage.getItem('access_token');
 
     // Attach the access token to ALL the requests from client to server.
     if(access_token) config.headers['Authorization'] = `Bearer ${access_token}`;
     return config;
 
-}, (error) => { Promise.reject(error); });
+}, (error) => { return Promise.reject(error); });
 
 // Safety net needs to be made here
 
