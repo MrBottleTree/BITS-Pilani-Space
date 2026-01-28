@@ -7,9 +7,12 @@ export function Signout() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        logout();
-        navigate("/auth/signin");
-    }, []);
+        const handleSignout = async () => {
+            await logout();
+            navigate("/auth/signin");
+        };
+        handleSignout();
+    }, [logout, navigate]);
 
     return <div>Signing out...</div>;
 }

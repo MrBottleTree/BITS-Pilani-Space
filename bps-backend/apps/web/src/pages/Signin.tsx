@@ -17,7 +17,7 @@ export function Signin() {
         try {
             const response = await axios.post(`${HTTP_BACKEND_URL}/api/v1/auth/signin`, { identifier, password });
 
-            if (response.status == HttpStatusCode.Ok) {
+            if (response.status === HttpStatusCode.Ok) {
                 const { access_token, expires_in, user } = response.data.data;
                 login(access_token, expires_in, user);
                 // For now, just alerting
@@ -42,9 +42,9 @@ export function Signin() {
             e.preventDefault();
             handleSignin();
         }}>
-            <Input placeholder="Handle or Email" onChange={(e) => setIdentifier(e.target.value)} />
+            <Input placeholder="Handle or Email" type="text" value={identifier} onChange={(e) => setIdentifier(e.target.value)} />
             <br />
-            <Input placeholder="Password" onChange={(e) => setPassword(e.target.value)} />
+            <Input placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
             <br />
             <Button
                 label={isLoading ? "Signing in..." : "Submit"}
