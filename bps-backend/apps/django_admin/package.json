@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "uv run python manage.py runserver",
-    "build": "uv run python manage.py inspectdb > core/models.py && uv run python scripts/fix_models.py && uv run python manage.py makemigrations core && uv run python manage.py migrate",
+    "build": "uv sync && uv run python manage.py inspectdb > core/models.py && uv run python scripts/fix_models.py && uv run python manage.py makemigrations core && uv run python manage.py migrate",
     "dev": "npm run build && npm run start"
   },
   "keywords": [],
