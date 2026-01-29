@@ -18,6 +18,12 @@ importers:
         specifier: 5.9.2
         version: 5.9.2
 
+  apps/django_admin:
+    dependencies:
+      '@repo/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+
   apps/http:
     dependencies:
       '@paralleldrive/cuid2':
