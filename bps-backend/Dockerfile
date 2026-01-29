@@ -1,6 +1,8 @@
 FROM node:24-alpine
 
-RUN apk add --no-cache openssl
+RUN apk add --no-cache python3
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 RUN npm install -g pnpm
 
