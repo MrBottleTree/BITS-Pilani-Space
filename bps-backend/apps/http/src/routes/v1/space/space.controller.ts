@@ -148,7 +148,7 @@ export const get_spaces = async (req: Request, res: Response, next: NextFunction
 
     try{
         const spaces = await client.space.findMany({
-            where: { user_id: current_user.user_id, deleted_at: null, map: { deleted_at: null } },
+            where: { deleted_at: null, map: { deleted_at: null } },
             select: {
                 id: true,
                 name: true,
