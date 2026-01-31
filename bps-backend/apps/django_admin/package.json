@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "uv run python manage.py inspectdb > core/models.py && uv run python scripts/fix_models.py && uv run python manage.py makemigrations core && uv run python manage.py migrate && uv run python manage.py runserver",
+    "generate": "uv run python manage.py inspectdb > core/models.py.tmp && uv run python -c \"import os; os.replace('core/models.py.tmp', 'core/models.py')\" && uv run python scripts/fix_models.py",
+    "start": "npm run generate && uv run python manage.py makemigrations core uploads && uv run python manage.py migrate && npm run generate && uv run python manage.py runserver 0.0.0.0:8000",
     "build": "uv sync",
     "dev": "npm run build && npm run start"
   },

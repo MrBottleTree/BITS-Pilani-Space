@@ -62,6 +62,7 @@ services:
       - "3000:3000"
       - "3001:3001"
       - "3002:3002"
+      - "8000:8000"
     environment:
       DATABASE_URL: "postgresql://bps:lol@postgres:5432/bps_db?schema=public"
       S3_ENDPOINT: "http://minio:9000"
