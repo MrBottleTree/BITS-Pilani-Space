@@ -23,6 +23,7 @@ RUN pnpm run build
 EXPOSE 3000
 EXPOSE 3001
 EXPOSE 3002
+EXPOSE 8000
 
 CMD ["/bin/sh", "-c", "\
     echo 'Moving to packages/db for migrations...'; \

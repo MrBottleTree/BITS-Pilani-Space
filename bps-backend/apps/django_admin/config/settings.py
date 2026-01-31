@@ -119,3 +119,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# S3 / MinIO Configuration
+S3_ENDPOINT = os.getenv('S3_ENDPOINT')
+S3_ACCESS_KEY = os.getenv('S3_ACCESS_KEY')
+S3_SECRET_KEY = os.getenv('S3_SECRET_KEY')
+S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
+S3_REGION = 'us-east-1'

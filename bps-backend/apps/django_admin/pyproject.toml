@@ -9,4 +9,5 @@ dependencies = [
     "psycopg2-binary",
     "dj-database-url",
     "python-dotenv>=1.2.1",
+    "boto3",
 ]
