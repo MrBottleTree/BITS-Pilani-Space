@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import api, { HttpStatusCode } from "../api/axios";
 
 interface Space {
@@ -22,26 +23,55 @@ export function Landing() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        async function fetchSpaces() {
-            try {
-                const response = await api.get("/api/v1/space");
-                if (response.data && response.data.data && response.data.data.spaces) {
-                    setSpaces(response.data.data.spaces);
-                }
-            } catch (err: any) {
-                if (err.response?.status === HttpStatusCode.BadRequest || err.response?.status === HttpStatusCode.Unauthorized) {
-                    setError("Please sign in to view spaces");
-                } else {
-                    setError("Failed to fetch spaces");
-                }
-            } finally {
-                setIsLoading(false);
-            }
-        }
+    const [newSpaceName, setNewSpaceName] = useState("");
+    const [newSpaceMapId, setNewSpaceMapId] = useState("");
+    const [createError, setCreateError] = useState<string | null>(null);
 
+    async function fetchSpaces() {
+        try {
+            const response = await api.get("/api/v1/space");
+            if (response.data && response.data.data && response.data.data.spaces) {
+                setSpaces(response.data.data.spaces);
+            }
+        } catch (err: unknown) {
+            const axiosErr = err as { response?: { status?: number } };
+            if (axiosErr.response?.status === HttpStatusCode.BadRequest || axiosErr.response?.status === HttpStatusCode.Unauthorized) {
+                setError("Please sign in to view spaces");
+            } else {
+                setError("Failed to fetch spaces");
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    useEffect(() => {
         fetchSpaces();
     }, []);
+
+    async function handleCreateSpace(e: FormEvent) {
+        e.preventDefault();
+        setCreateError(null);
+        if (!newSpaceName.trim() || !newSpaceMapId.trim()) {
+            setCreateError("Name and Map ID are required");
+            return;
+        }
+        try {
+            const res = await api.post("/api/v1/space", {
+                name: newSpaceName.trim(),
+                map_id: newSpaceMapId.trim(),
+            });
+            if (res.status === HttpStatusCode.Created || res.status === HttpStatusCode.Ok) {
+                setNewSpaceName("");
+                setNewSpaceMapId("");
+                await fetchSpaces();
+            } else {
+                setCreateError(res.data?.message || "Failed to create space");
+            }
+        } catch {
+            setCreateError("Failed to create space");
+        }
+    }
 
     return (
         <div>
@@ -65,6 +95,8 @@ export function Landing() {
                     {spaces.map((space) => (
                         <li key={space.id}>
                             <strong>{space.name}</strong>
+                            {" "}
+                            <Link to={`/space/${space.id}`}>Join</Link>
                             <br />
                             Map: {space.map.name} ({space.map.width}x{space.map.height})
                             <br />
@@ -76,8 +108,36 @@ export function Landing() {
 
             <hr />
 
+            <h2>Create Space</h2>
+            <form onSubmit={handleCreateSpace}>
+                <div>
+                    <label>
+                        Name:{" "}
+                        <input
+                            type="text"
+                            value={newSpaceName}
+                            onChange={(e) => setNewSpaceName(e.target.value)}
+                        />
+                    </label>
+                </div>
+                <div>
+                    <label>
+                        Map ID:{" "}
+                        <input
+                            type="text"
+                            value={newSpaceMapId}
+                            onChange={(e) => setNewSpaceMapId(e.target.value)}
+                        />
+                    </label>
+                </div>
+                <button type="submit">Create</button>
+                {createError && <p>{createError}</p>}
+            </form>
+
+            <hr />
+
             <nav>
-                <a href="/auth/signin">Sign In</a> | <a href="/auth/signup">Sign Up</a>
+                <Link to="/auth/signin">Sign In</Link> | <Link to="/auth/signup">Sign Up</Link>
             </nav>
         </div>
     );
