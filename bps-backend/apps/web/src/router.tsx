@@ -3,6 +3,7 @@ import { Signup } from "./pages/Signup";
 import { Signin } from "./pages/Signin";
 import { Signout } from "./pages/Signout";
 import { Landing } from "./pages/Landing";
+import { SpaceGame } from "./pages/SpaceGame";
 
 export const router = createBrowserRouter([{
         path: "/",
@@ -16,5 +17,8 @@ export const router = createBrowserRouter([{
     }, {
         path: "/auth/signout",
         element: <Signout />,
+    }, {
+        path: "/space/:id",
+        element: <SpaceGame />,
     }
 ]);
