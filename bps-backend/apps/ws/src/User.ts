@@ -93,7 +93,7 @@ export class User {
                     }, this, space_id);
                     return;
                 case "MOVE":
-                    const move_data = MoveSchema.safeParse(JSON.parse(data.toString()));
+                    const move_data = MoveSchema.safeParse(parsed_data.data.payload);
                     if(!move_data.success){
                         return this.ws.close();
                     }

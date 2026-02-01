@@ -154,7 +154,7 @@ export const get_many_users = async (req: Request, res: Response, next: NextFunc
     }
 
     try{
-        const db_resp = client.user.findMany({
+        const db_resp = await client.user.findMany({
             where: {id: { in: parsed_body.data.user_ids } },
             select:{
                 id: true,
