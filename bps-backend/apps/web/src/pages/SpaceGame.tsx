@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useWebSocket, type ConnectionState, type LogEntry } from "../hooks/useWebSocket";
 import { GameScene } from "../game/GameScene";
 import api from "../api/axios";
+import { getImageUrl } from "../config";
 
 interface SpaceMeta {
     id: string;
@@ -14,7 +15,31 @@ interface SpaceMeta {
         name: string;
         height: number;
         width: number;
+        thumbnail_key: string | null;
     };
+}
+
+interface MapElement {
+    id: string;
+    x: number;
+    y: number;
+    scale: number;
+    rotation: number;
+    element: {
+        id: string;
+        name: string;
+        image_key: string;
+        height: number;
+        width: number;
+        static: boolean;
+    };
+}
+
+interface UserInfo {
+    id: string;
+    name: string;
+    handle: string;
+    avatarUrl: string | null;
 }
 
 interface RoomUser {
@@ -32,6 +57,7 @@ export function SpaceGame() {
     const [myPos, setMyPos] = useState({ x: 0, y: 0 });
     const [roomUsers, setRoomUsers] = useState<RoomUser[]>([]);
     const [joined, setJoined] = useState(false);
+    const [, setUserInfoMap] = useState<Map<string, UserInfo>>(new Map());
 
     const gameContainerRef = useRef<HTMLDivElement>(null);
     const gameRef = useRef<Phaser.Game | null>(null);
@@ -40,6 +66,20 @@ export function SpaceGame() {
     const { connectionState, send, lastMessage, messageLog, authMessage } = useWebSocket(
         spaceMeta ? token : null
     );
+
+
+    // Helper: extract user_id from token (JWT payload)
+    const getMyUserId = useCallback((): string | null => {
+        if (!token) return null;
+        try {
+            const parts = token.split(".");
+            if (parts.length !== 3) return null;
+            const payload = JSON.parse(atob(parts[1]!));
+            return payload.user_id ?? null;
+        } catch {
+            return null;
+        }
+    }, [token]);
 
     // Step 1: Fetch space metadata
     useEffect(() => {
@@ -66,6 +106,39 @@ export function SpaceGame() {
         fetchSpace();
     }, [spaceId, token]);
 
+    // Step 1b: Fetch map elements when spaceMeta is loaded
+    useEffect(() => {
+        if (!spaceMeta) return;
+        const mapId = spaceMeta.map.id;
+
+        async function fetchMapElements() {
+            try {
+                const res = await api.get(`/api/v1/map/${mapId}`);
+                const mapData = res.data?.data?.map;
+                if (!mapData?.default_elements) {
+                    console.warn("No default elements in map");
+                    return;
+                }
+
+                const elements = mapData.default_elements.map((placement: MapElement) => ({
+                    x: placement.x,
+                    y: placement.y,
+                    scale: placement.scale,
+                    rotation: placement.rotation,
+                    imageUrl: getImageUrl(placement.element.image_key),
+                    width: placement.element.width,
+                    height: placement.element.height,
+                }));
+
+                sceneRef.current?.setMapElements(elements);
+            } catch (err) {
+                console.warn("Failed to fetch map elements:", err);
+            }
+        }
+
+        fetchMapElements();
+    }, [spaceMeta]);
+
     // Move request callback (called by Phaser scene on keypress)
     const handleMoveRequest = useCallback(
         (x: number, y: number) => {
@@ -85,6 +158,7 @@ export function SpaceGame() {
             mapWidth: spaceMeta.map.width,
             mapHeight: spaceMeta.map.height,
             onMoveRequest: handleMoveRequest,
+            thumbnailUrl: spaceMeta.map.thumbnail_key ? getImageUrl(spaceMeta.map.thumbnail_key) : undefined,
         });
         sceneRef.current = scene;
 
@@ -113,11 +187,47 @@ export function SpaceGame() {
         }
     }, [connectionState, spaceId, joined, send]);
 
+    // Helper: Fetch user info by user IDs and return the info
+    const fetchUserInfo = useCallback(async (userIds: string[]): Promise<Map<string, UserInfo>> => {
+        if (userIds.length === 0) return new Map();
+
+        try {
+            const res = await api.post("/api/v1/user", { user_ids: userIds });
+            const avatars = res.data?.data?.avatars;
+            if (!Array.isArray(avatars)) {
+                console.warn("Unexpected user info response");
+                return new Map();
+            }
+
+            const infoMap = new Map<string, UserInfo>();
+            avatars.forEach((user: { id: string; name: string; handle: string; avatar: { image_key: string } | null }) => {
+                infoMap.set(user.id, {
+                    id: user.id,
+                    name: user.name,
+                    handle: user.handle,
+                    avatarUrl: user.avatar ? getImageUrl(user.avatar.image_key) : null,
+                });
+            });
+
+            setUserInfoMap((prev) => {
+                const newMap = new Map(prev);
+                infoMap.forEach((info, id) => newMap.set(id, info));
+                return newMap;
+            });
+
+            return infoMap;
+        } catch (err) {
+            console.warn("Failed to fetch user info:", err);
+            return new Map();
+        }
+    }, []);
+
     // Step 4: Dispatch incoming WS messages
     useEffect(() => {
         if (!lastMessage) return;
         const scene = sceneRef.current;
 
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         switch (lastMessage.type) {
             case "JOINED": {
                 const payload = lastMessage.payload as {
@@ -127,12 +237,32 @@ export function SpaceGame() {
                 setMyPos({ x: payload.spawn.x, y: payload.spawn.y });
                 scene?.setMyPosition(payload.spawn.x, payload.spawn.y);
 
+                // Fetch my own info
+                const myUserId = getMyUserId();
+                if (myUserId) {
+                    fetchUserInfo([myUserId]).then((infoMap) => {
+                        const myInfo = infoMap.get(myUserId);
+                        if (myInfo) {
+                            scene?.updateMyInfo(`${myInfo.name} (@${myInfo.handle})`, myInfo.avatarUrl ?? undefined);
+                        }
+                    });
+                }
+
                 // Other users already in the room (we don't know their positions)
-                const others: RoomUser[] = (payload.user_ids || [])
-                    .filter((uid) => uid !== getMyUserId())
-                    .map((uid) => ({ userId: uid, x: 0, y: 0 }));
+                const otherUserIds = (payload.user_ids || []).filter((uid) => uid !== myUserId);
+                const others: RoomUser[] = otherUserIds.map((uid) => ({ userId: uid, x: 0, y: 0 }));
                 setRoomUsers(others);
-                others.forEach((u) => scene?.addUser(u.userId, u.x, u.y));
+
+                // Fetch info for all other users
+                fetchUserInfo(otherUserIds).then((infoMap) => {
+                    others.forEach((u) => {
+                        const info = infoMap.get(u.userId);
+                        const displayName = info ? `${info.name} (@${info.handle})` : undefined;
+                        const avatarUrl = info?.avatarUrl ?? undefined;
+                        scene?.addUser(u.userId, u.x, u.y, displayName, avatarUrl);
+                    });
+                });
+
                 setJoined(true);
                 break;
             }
@@ -142,7 +272,15 @@ export function SpaceGame() {
                     x: number;
                     y: number;
                 };
-                scene?.addUser(payload.user_id, payload.x, payload.y);
+
+                // Fetch info for the newly joined user
+                fetchUserInfo([payload.user_id]).then((infoMap) => {
+                    const info = infoMap.get(payload.user_id);
+                    const displayName = info ? `${info.name} (@${info.handle})` : undefined;
+                    const avatarUrl = info?.avatarUrl ?? undefined;
+                    scene?.addUser(payload.user_id, payload.x, payload.y, displayName, avatarUrl);
+                });
+
                 setRoomUsers((prev) => {
                     if (prev.some((u) => u.userId === payload.user_id)) return prev;
                     return [...prev, { userId: payload.user_id, x: payload.x, y: payload.y }];
@@ -176,20 +314,7 @@ export function SpaceGame() {
                 break;
             }
         }
-    }, [lastMessage]);
-
-    // Helper: extract user_id from token (JWT payload)
-    function getMyUserId(): string | null {
-        if (!token) return null;
-        try {
-            const parts = token.split(".");
-            if (parts.length !== 3) return null;
-            const payload = JSON.parse(atob(parts[1]!));
-            return payload.user_id ?? null;
-        } catch {
-            return null;
-        }
-    }
+    }, [lastMessage, fetchUserInfo, getMyUserId]);
 
     // --- Auth guard ---
     if (!token) {

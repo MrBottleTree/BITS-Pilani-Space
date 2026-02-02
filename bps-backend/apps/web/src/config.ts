@@ -11,5 +11,10 @@ export const HTTP_STATUS = {
     INTERNAL_SERVER_ERROR: 500,
 };
 
-export const HTTP_BACKEND_URL = 'http://trevux.in:3000';
-export const WS_BACKEND_URL = 'ws://trevux.in:3001';
+export const HTTP_BACKEND_URL = 'http://localhost:3000';
+export const WS_BACKEND_URL = 'ws://localhost:3001';
+export const S3_BUCKET_URL = 'http://localhost:9000/my-app-bucket';
+
+export function getImageUrl(imageKey: string): string {
+    return `${S3_BUCKET_URL}/${imageKey}`;
+}
