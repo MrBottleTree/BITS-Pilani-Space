@@ -1,6 +1,7 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import api, { HttpStatusCode } from "../api/axios";
+import { getImageUrl } from "../config";
 
 interface Space {
     id: string;
@@ -94,6 +95,19 @@ export function Landing() {
                 <ul>
                     {spaces.map((space) => (
                         <li key={space.id}>
+                            {space.map.thumbnail_key && (
+                                <img
+                                    src={getImageUrl(space.map.thumbnail_key)}
+                                    alt={space.map.name}
+                                    style={{
+                                        maxWidth: '200px',
+                                        maxHeight: '150px',
+                                        display: 'block',
+                                        borderRadius: '4px',
+                                        marginBottom: '8px',
+                                    }}
+                                />
+                            )}
                             <strong>{space.name}</strong>
                             {" "}
                             <Link to={`/space/${space.id}`}>Join</Link>

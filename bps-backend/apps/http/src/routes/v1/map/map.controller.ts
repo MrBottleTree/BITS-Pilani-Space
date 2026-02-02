@@ -59,7 +59,37 @@ export const get_map = async (req: Request, res: Response, next: NextFunction) =
             return;
         }
 
-        const response = await client.map.findUnique({where: {id: map_id}});
+        const response = await client.map.findUnique({
+            where: { id: map_id, deleted_at: null },
+            select: {
+                id: true,
+                name: true,
+                height: true,
+                width: true,
+                thumbnail_key: true,
+                created_at: true,
+                updated_at: true,
+                default_elements: {
+                    select: {
+                        id: true,
+                        x: true,
+                        y: true,
+                        scale: true,
+                        rotation: true,
+                        element: {
+                            select: {
+                                id: true,
+                                name: true,
+                                image_key: true,
+                                height: true,
+                                width: true,
+                                static: true,
+                            }
+                        }
+                    }
+                }
+            }
+        });
         return res.status(HTTP_STATUS.OK).json({message: "ok", data: {map: response}});
     }
     catch{
