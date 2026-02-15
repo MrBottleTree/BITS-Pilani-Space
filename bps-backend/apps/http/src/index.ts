@@ -11,7 +11,7 @@ app.use(cors({
         "http://trevux.in:5173",
         "http://localhost:5173" 
       ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     credentials: true
 }));
 
