@@ -1,5 +1,6 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import api, { HttpStatusCode } from "../api/axios";
 import { getImageUrl } from "../config";
 
@@ -20,6 +21,7 @@ interface Space {
 }
 
 export function Landing() {
+    const { token } = useAuth();
     const [spaces, setSpaces] = useState<Space[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -151,7 +153,15 @@ export function Landing() {
             <hr />
 
             <nav>
-                <Link to="/auth/signin">Sign In</Link> | <Link to="/auth/signup">Sign Up</Link>
+                {token ? (
+                    <>
+                        <Link to="/profile">Profile</Link> | <Link to="/auth/signout">Sign Out</Link>
+                    </>
+                ) : (
+                    <>
+                        <Link to="/auth/signin">Sign In</Link> | <Link to="/auth/signup">Sign Up</Link>
+                    </>
+                )}
             </nav>
         </div>
     );
